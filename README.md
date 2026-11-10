@@ -1,3 +1,14 @@
+---
+title: ShelfSense
+emoji: 🍲
+colorFrom: red
+colorTo: yellow
+sdk: docker
+app_port: 7860
+pinned: false
+short_description: Bilingual EN/KO back-of-house assistant (synthetic demo)
+---
+
 # ShelfSense (쉘프센스) — Autonomous Back-of-House Assistant Prototype
 
 > **Bilingual (Korean / English) Back-of-House Operations Prototype for "서울 김치찌개집" (Seoul Kimchi Jjigae House)**  
@@ -55,3 +66,25 @@ Run all commands from the project root (`e:\ShelfSense\ShelfSense`):
 - [`docs/STATUS.md`](file:///e:/ShelfSense/ShelfSense/docs/STATUS.md) — Milestone M1–M7 inventory and Pre-M3 Audit checklist evidence.
 - [`docs/BACKTEST_REPORT.md`](file:///e:/ShelfSense/ShelfSense/docs/BACKTEST_REPORT.md) — Full 20-series rolling-origin backtest evaluation report.
 - [`docs/forecast_chart.png`](file:///e:/ShelfSense/ShelfSense/docs/forecast_chart.png) — Screenshot of the live running application showing the non-double-counted stacked 7-day forecast chart.
+
+
+---
+
+## Deployment (Hugging Face Spaces — Docker)
+
+The repo ships a single-container [`Dockerfile`](Dockerfile): it builds the React frontend and serves it from FastAPI on port `7860`, so the UI and `/api/*` share one origin.
+
+1. Create a Space at https://huggingface.co/new-space → **SDK: Docker** → **Blank**.
+2. Push this repo to the Space:
+   ```bash
+   git remote add space https://huggingface.co/spaces/<your-username>/ShelfSense
+   git push space main
+   ```
+   (Use a Hugging Face access token with **write** permission as the password.)
+3. The Space builds automatically and is served at `https://<your-username>-shelfsense.hf.space`.
+
+Notes:
+- The YAML header at the top of this README is the Spaces config (`sdk: docker`, `app_port: 7860`).
+- The forecast is pre-trained in a background thread at startup (`SHELFSENSE_WARMUP=1`); the Forecast tab is ready ~1–2 minutes after boot.
+- Free Spaces storage is ephemeral: the SQLite DB resets to the deterministic `seed=42` demo state on every restart.
+- Local Docker test: `docker build -t shelfsense . && docker run -p 7860:7860 shelfsense` → http://localhost:7860

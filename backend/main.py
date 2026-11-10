@@ -1,4 +1,9 @@
+import os
+import threading
+from pathlib import Path
 from fastapi import FastAPI, Depends, UploadFile, File, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from datetime import date, datetime, timedelta
@@ -175,17 +180,22 @@ def get_lots(session: Session = Depends(get_session)):
         })
     return result
 
+_forecast_lock = threading.Lock()
+
 @app.get("/api/forecast/7day")
 def get_7day_forecast():
     global _cached_backtest, _cached_forecast
-    engine = ForecastEngine()
-    df = fetch_training_dataframe()
-    if _cached_backtest is None:
-        _cached_backtest = engine.run_rolling_backtest(df, num_folds=8, fold_days=7)
-    
-    anchor_date = date(2026, 11, 4)
-    if _cached_forecast is None:
-        _cached_forecast = engine.generate_7day_forecast(df, _cached_backtest, anchor_date)
+    # Lock ensures concurrent requests (or the startup warmup thread) never train twice.
+    with _forecast_lock:
+        if _cached_backtest is None or _cached_forecast is None:
+            engine = ForecastEngine()
+            df = fetch_training_dataframe()
+            if _cached_backtest is None:
+                _cached_backtest = engine.run_rolling_backtest(df, num_folds=8, fold_days=7)
+
+            anchor_date = date(2026, 11, 4)
+            if _cached_forecast is None:
+                _cached_forecast = engine.generate_7day_forecast(df, _cached_backtest, anchor_date)
     return {
         "forecast": _cached_forecast,
         "backtest_summary": {
@@ -725,3 +735,43 @@ def get_morning_summary(session: Session = Depends(get_session)):
             "disclaimer_en": labor_draft["disclaimer_en"],
         },
     }
+
+
+# ---------------------------------------------------------------------------
+# Deployment helpers (Hugging Face Spaces / single-container hosting)
+# ---------------------------------------------------------------------------
+
+@app.on_event("startup")
+def _warmup_forecast_cache():
+    """Optionally pre-train the forecast in a background thread so the first
+    visitor does not wait. Enabled with SHELFSENSE_WARMUP=1 (set in Dockerfile)."""
+    if os.environ.get("SHELFSENSE_WARMUP") == "1":
+        threading.Thread(target=get_7day_forecast, daemon=True).start()
+
+
+# Serve the built React frontend (frontend/dist) from the same origin, if present.
+# Registered last so every /api/* route above takes precedence.
+_FRONTEND_DIST = Path(
+    os.environ.get(
+        "SHELFSENSE_FRONTEND_DIST",
+        Path(__file__).resolve().parent.parent / "frontend" / "dist",
+    )
+)
+
+if _FRONTEND_DIST.is_dir() and (_FRONTEND_DIST / "index.html").is_file():
+    _assets_dir = _FRONTEND_DIST / "assets"
+    if _assets_dir.is_dir():
+        app.mount("/assets", StaticFiles(directory=_assets_dir), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def _serve_spa(full_path: str):
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not Found")
+        candidate = (_FRONTEND_DIST / full_path).resolve()
+        if (
+            full_path
+            and candidate.is_file()
+            and _FRONTEND_DIST.resolve() in candidate.parents
+        ):
+            return FileResponse(candidate)
+        return FileResponse(_FRONTEND_DIST / "index.html")
