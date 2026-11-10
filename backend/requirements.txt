@@ -1,0 +1,15 @@
+fastapi==0.162.2
+uvicorn==0.54.0
+sqlmodel==0.0.48
+SQLAlchemy==2.1.8
+pydantic==2.14.3
+pandas==3.1.1
+numpy==2.5.4
+scipy==1.18.1
+scikit-learn==1.9.1
+threadpoolctl==3.8.0
+holidays==0.108
+pytest==9.2.0
+httpx==0.28.1
+requests==2.34.2
+python-multipart==0.0.33

@@ -1,0 +1,40 @@
+{
+  "app_name": "ShelfSense",
+  "demo_data_badge": "Demo data",
+  "demo_data_subtitle": "Fictional restaurant: Seoul Kimchi Jjigae House (서울 김치찌개집)",
+  "demo_clock": "Demo Clock",
+  "nav": {
+    "summary": "Morning Summary",
+    "forecast": "Forecast",
+    "stock": "Stock & Scan",
+    "orders": "Orders",
+    "prep": "Prep Sheet",
+    "waste": "Waste Log",
+    "labor": "Labor & Schedule",
+    "settings": "Settings"
+  },
+  "actions": {
+    "approve": "Approve",
+    "edit": "Edit",
+    "reject": "Reject",
+    "save": "Save",
+    "cancel": "Cancel",
+    "scan": "Scan Barcode",
+    "spot_count": "Spot Count"
+  },
+  "labels": {
+    "food_cost_pct": "Food Cost %",
+    "labor_cost_pct": "Labor Cost %",
+    "prime_cost_pct": "Prime Cost %",
+    "waste_krw": "Waste",
+    "forecast_error": "Forecast WAPE",
+    "expiry_date": "소비기한 (Expiry)",
+    "at_risk": "At Risk",
+    "usable": "Usable",
+    "status": "Status",
+    "quantity": "Quantity",
+    "unit": "Unit",
+    "supplier": "Supplier"
+  }
+}
+

@@ -1,0 +1,40 @@
+{
+  "app_name": "ShelfSense",
+  "demo_data_badge": "데모 데이터 (Demo data)",
+  "demo_data_subtitle": "가상 매장: 서울 김치찌개집 (Seoul Kimchi Jjigae House)",
+  "demo_clock": "시뮬레이션 시계",
+  "nav": {
+    "summary": "모닝 요약",
+    "forecast": "수요 예측",
+    "stock": "재고 & 스캔",
+    "orders": "발주 추천",
+    "prep": "프랩 시트",
+    "waste": "폐기 등록",
+    "labor": "인력 & 스케줄",
+    "settings": "설정 & 감사"
+  },
+  "actions": {
+    "approve": "승인",
+    "edit": "수량 변경",
+    "reject": "반려",
+    "save": "저장",
+    "cancel": "취소",
+    "scan": "바코드 스캔",
+    "spot_count": "현장 실사"
+  },
+  "labels": {
+    "food_cost_pct": "식자재 원가율",
+    "labor_cost_pct": "인건비 비율",
+    "prime_cost_pct": "프라임 코스트 비율",
+    "waste_krw": "폐기 손실액",
+    "forecast_error": "예측 오차 (WAPE)",
+    "expiry_date": "소비기한",
+    "at_risk": "폐기 위험",
+    "usable": "가용 재고",
+    "status": "상태",
+    "quantity": "수량",
+    "unit": "단위",
+    "supplier": "공급사"
+  }
+}
+
