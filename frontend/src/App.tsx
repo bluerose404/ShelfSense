@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   LayoutDashboard, TrendingUp, Boxes, ShoppingCart, 
@@ -6,19 +6,18 @@ import {
   Clock, Globe
 } from 'lucide-react';
 import ForecastView from './components/ForecastView';
+import InventoryScanView from './components/InventoryScanView';
+import OrdersView from './components/OrdersView';
+import PrepSheetView from './components/PrepSheetView';
+import WasteView from './components/WasteView';
+import LaborView from './components/LaborView';
+import SummaryView from './components/SummaryView';
+import SettingsAuditView from './components/SettingsAuditView';
 
 export default function App() {
   const { t, i18n } = useTranslation();
-  const [currentTab, setCurrentTab] = useState('forecast');
+  const [currentTab, setCurrentTab] = useState('summary');
   const [demoClock] = useState('2026-11-04 09:00 (수/Wed)');
-  const [healthStatus, setHealthStatus] = useState<string>('connecting...');
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then(res => res.json())
-      .then(data => setHealthStatus(data.status === 'ok' ? 'Online' : 'Degraded'))
-      .catch(() => setHealthStatus('API Offline'));
-  }, []);
 
   const toggleLanguage = () => {
     const nextLng = i18n.language.startsWith('ko') ? 'en' : 'ko';
@@ -104,27 +103,22 @@ export default function App() {
 
         {/* Content Area */}
         <main className="flex-1 p-4 md:p-6">
-          {currentTab === 'forecast' ? (
+          {currentTab === 'summary' ? (
+            <SummaryView onNavigate={tab => setCurrentTab(tab)} />
+          ) : currentTab === 'forecast' ? (
             <ForecastView />
+          ) : currentTab === 'stock' ? (
+            <InventoryScanView />
+          ) : currentTab === 'orders' ? (
+            <OrdersView />
+          ) : currentTab === 'prep' ? (
+            <PrepSheetView />
+          ) : currentTab === 'waste' ? (
+            <WasteView />
+          ) : currentTab === 'labor' ? (
+            <LaborView />
           ) : (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">
-                {navItems.find(i => i.id === currentTab)?.label}
-              </h2>
-              <p className="text-sm text-gray-500 mb-6">
-                Backend Status: <span className="font-semibold text-teal-700">{healthStatus}</span>
-              </p>
-
-              <div className="p-4 bg-teal-50 border border-teal-200 rounded-lg text-teal-900 text-sm flex items-start space-x-3">
-                <div className="p-1 bg-[#078B79] rounded text-white">✓</div>
-                <div>
-                  <p className="font-semibold">{navItems.find(i => i.id === currentTab)?.label}</p>
-                  <p className="text-xs text-teal-800 mt-0.5">
-                    Module ready for subsequent milestones.
-                  </p>
-                </div>
-              </div>
-            </div>
+            <SettingsAuditView />
           )}
         </main>
       </div>

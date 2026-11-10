@@ -62,11 +62,21 @@ class ProductLookupAdapter:
         # 2. Public API mock
         if barcode in MOCK_PUBLIC_FOOD_API:
             data = MOCK_PUBLIC_FOOD_API[barcode]
+            linked_ing = None
+            if data.get("linked_ingredient_code"):
+                with Session(engine) as session:
+                    linked_ing = session.exec(
+                        select(Ingredient).where(Ingredient.code == data["linked_ingredient_code"])
+                    ).first()
             return {
                 "source": "public_api",
                 "product_id": None,
                 "barcode": barcode,
-                **data
+                **data,
+                "ingredient_id": linked_ing.id if linked_ing else None,
+                "ingredient_name_ko": linked_ing.name_ko if linked_ing else None,
+                "ingredient_name_en": linked_ing.name_en if linked_ing else None,
+                "unit_cost_krw": linked_ing.unit_cost_krw if linked_ing else 0.0,
             }
 
         # 3. Not found

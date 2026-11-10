@@ -47,14 +47,21 @@ def parse_gs1_2d(raw_text: str) -> Dict[str, Any]:
         result["gtin"] = gtin_val
         result["is_gs1"] = True
         remaining = raw_text[16:]
-        if "17" in remaining:
+        after_expiry = remaining
+        if remaining.startswith("17") and len(remaining) >= 8 and remaining[2:8].isdigit():
+            expiry_match = re.search(r"^(\d{6})", remaining[2:8])
+            after_expiry = remaining[8:]
+        elif "17" in remaining:
             idx = remaining.find("17")
             exp_str = remaining[idx+2:idx+8]
             if len(exp_str) == 6 and exp_str.isdigit():
                 expiry_match = re.search(r"^(\d{6})", exp_str)
-        if "10" in remaining:
-            idx = remaining.find("10")
-            batch_match = re.search(r"^([A-Za-z0-9\-]+)", remaining[idx+2:])
+                after_expiry = remaining[idx+8:]
+        if after_expiry.startswith("10"):
+            batch_match = re.search(r"^([A-Za-z0-9\-]+)", after_expiry[2:])
+        elif "10" in after_expiry:
+            idx = after_expiry.find("10")
+            batch_match = re.search(r"^([A-Za-z0-9\-]+)", after_expiry[idx+2:])
     elif gtin_match:
         result["is_gs1"] = True
         result["gtin"] = gtin_match.group(1)
