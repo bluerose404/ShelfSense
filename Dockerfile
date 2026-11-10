@@ -1,5 +1,6 @@
 # ShelfSense — single-container image (FastAPI API + built React frontend)
-# Target: Hugging Face Spaces (Docker SDK, app_port 7860). Also works on Render/Railway/Fly.
+# Target: Render (free web service, Docker runtime; PORT injected by Render).
+# Also works on Railway / Fly.io / Hugging Face Spaces (defaults to port 7860).
 
 # ---------- Stage 1: build the React frontend ----------
 FROM node:24-slim AS frontend
@@ -33,6 +34,10 @@ RUN pip install --no-cache-dir -r backend/requirements.txt
 
 COPY --chown=user backend/ backend/
 COPY --chown=user --from=frontend /build/frontend/dist frontend/dist
+
+# Pre-train the deterministic 7-day forecast at build time so low-CPU hosts
+# (Render free: 0.1 CPU / 512 MB) serve it instantly instead of training at runtime.
+RUN python -m backend.scripts.precompute_forecast && chown user backend/forecast_cache.json
 
 USER user
 EXPOSE 7860

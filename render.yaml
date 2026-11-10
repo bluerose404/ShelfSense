@@ -1,0 +1,14 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Deploy: Render Dashboard -> New -> Blueprint -> select this repo -> Apply.
+services:
+  - type: web
+    name: shelfsense
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/settings
+    autoDeploy: true
+    envVars:
+      - key: SHELFSENSE_WARMUP
+        value: "1"

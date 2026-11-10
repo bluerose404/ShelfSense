@@ -1,14 +1,3 @@
----
-title: ShelfSense
-emoji: 🍲
-colorFrom: red
-colorTo: yellow
-sdk: docker
-app_port: 7860
-pinned: false
-short_description: Bilingual EN/KO back-of-house assistant (synthetic demo)
----
-
 # ShelfSense (쉘프센스) — Autonomous Back-of-House Assistant Prototype
 
 > **Bilingual (Korean / English) Back-of-House Operations Prototype for "서울 김치찌개집" (Seoul Kimchi Jjigae House)**  
@@ -70,21 +59,17 @@ Run all commands from the project root (`e:\ShelfSense\ShelfSense`):
 
 ---
 
-## Deployment (Hugging Face Spaces — Docker)
+## Deployment (Render — free Docker web service)
 
-The repo ships a single-container [`Dockerfile`](Dockerfile): it builds the React frontend and serves it from FastAPI on port `7860`, so the UI and `/api/*` share one origin.
+The repo ships a single-container [`Dockerfile`](Dockerfile) and a Render Blueprint [`render.yaml`](render.yaml). The image builds the React frontend and serves it from FastAPI, so the UI and `/api/*` share one origin.
 
-1. Create a Space at https://huggingface.co/new-space → **SDK: Docker** → **Blank**.
-2. Push this repo to the Space:
-   ```bash
-   git remote add space https://huggingface.co/spaces/<your-username>/ShelfSense
-   git push space main
-   ```
-   (Use a Hugging Face access token with **write** permission as the password.)
-3. The Space builds automatically and is served at `https://<your-username>-shelfsense.hf.space`.
+1. Sign up at https://render.com with GitHub (free plan, no card required).
+2. **New → Blueprint** → select this repository → **Apply**.
+3. Render builds the image (~5–10 min first time) and serves it at `https://shelfsense-xxxx.onrender.com`. Every push to `main` auto-deploys.
 
-Notes:
-- The YAML header at the top of this README is the Spaces config (`sdk: docker`, `app_port: 7860`).
-- The forecast is pre-trained in a background thread at startup (`SHELFSENSE_WARMUP=1`); the Forecast tab is ready ~1–2 minutes after boot.
-- Free Spaces storage is ephemeral: the SQLite DB resets to the deterministic `seed=42` demo state on every restart.
-- Local Docker test: `docker build -t shelfsense . && docker run -p 7860:7860 shelfsense` → http://localhost:7860
+How it fits the free plan (0.1 CPU / 512 MB):
+- The deterministic 7-day forecast (8-fold backtest, 20 series) is **pre-trained during `docker build`** by `backend/scripts/precompute_forecast.py` and saved to `backend/forecast_cache.json`; the server loads it instantly instead of training at runtime. Model, data and `seed=42` are unchanged. Without the cache file (e.g. local dev) the API trains live as before.
+- Free instances sleep after 15 min idle (first request then takes ~1 min to wake).
+- Storage is ephemeral: the SQLite DB resets to the deterministic `seed=42` demo state on every restart/redeploy.
+
+Local Docker test: `docker build -t shelfsense . && docker run -p 7860:7860 shelfsense` → http://localhost:7860

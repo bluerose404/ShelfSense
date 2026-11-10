@@ -15,3 +15,6 @@ dist/
 .DS_Store
 Thumbs.db
 *.log
+
+# Generated forecast cache (built inside Docker image)
+backend/forecast_cache.json

@@ -1,3 +1,4 @@
+import json
 import os
 import threading
 from pathlib import Path
@@ -182,20 +183,30 @@ def get_lots(session: Session = Depends(get_session)):
 
 _forecast_lock = threading.Lock()
 
-@app.get("/api/forecast/7day")
-def get_7day_forecast():
-    global _cached_backtest, _cached_forecast
-    # Lock ensures concurrent requests (or the startup warmup thread) never train twice.
-    with _forecast_lock:
-        if _cached_backtest is None or _cached_forecast is None:
-            engine = ForecastEngine()
-            df = fetch_training_dataframe()
-            if _cached_backtest is None:
-                _cached_backtest = engine.run_rolling_backtest(df, num_folds=8, fold_days=7)
+_cached_forecast_payload: Optional[Dict[str, Any]] = None
 
-            anchor_date = date(2026, 11, 4)
-            if _cached_forecast is None:
-                _cached_forecast = engine.generate_7day_forecast(df, _cached_backtest, anchor_date)
+# Optional precomputed forecast payload (written at Docker build time by
+# backend/scripts/precompute_forecast.py). Lets low-CPU hosts (e.g. Render free)
+# serve the forecast instantly without retraining at runtime.
+FORECAST_CACHE_PATH = Path(
+    os.environ.get(
+        "SHELFSENSE_FORECAST_CACHE",
+        Path(__file__).resolve().parent / "forecast_cache.json",
+    )
+)
+
+
+def compute_forecast_payload() -> Dict[str, Any]:
+    """Train the 8-fold backtest + 7-day forecast and return the API payload."""
+    global _cached_backtest, _cached_forecast
+    engine = ForecastEngine()
+    df = fetch_training_dataframe()
+    if _cached_backtest is None:
+        _cached_backtest = engine.run_rolling_backtest(df, num_folds=8, fold_days=7)
+
+    anchor_date = date(2026, 11, 4)
+    if _cached_forecast is None:
+        _cached_forecast = engine.generate_7day_forecast(df, _cached_backtest, anchor_date)
     return {
         "forecast": _cached_forecast,
         "backtest_summary": {
@@ -203,6 +214,20 @@ def get_7day_forecast():
         },
         "overall": _cached_backtest.get("overall", {})
     }
+
+
+@app.get("/api/forecast/7day")
+def get_7day_forecast():
+    global _cached_forecast_payload
+    # Lock ensures concurrent requests (or the startup warmup thread) never train twice.
+    with _forecast_lock:
+        if _cached_forecast_payload is None:
+            if FORECAST_CACHE_PATH.is_file():
+                with open(FORECAST_CACHE_PATH, encoding="utf-8") as fh:
+                    _cached_forecast_payload = json.load(fh)
+            else:
+                _cached_forecast_payload = compute_forecast_payload()
+    return _cached_forecast_payload
 
 @app.post("/api/forecast/check-csv")
 async def check_csv_sales(file: UploadFile = File(...)):
