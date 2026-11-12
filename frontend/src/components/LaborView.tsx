@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Users, AlertCircle, CheckCircle2, Scissors, ShieldAlert } from 'lucide-react';
+import { Users, Info, CheckCircle2, Scissors, ShieldAlert } from 'lucide-react';
 
 export interface StaffScheduleRow {
   staff_id: number;
@@ -139,287 +139,288 @@ export default function LaborView() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header & 5+ Employees Toggle */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            {isKo ? '주간 인력 스케줄 초안 & 근로기준법 점검' : 'Weekly Labor Schedule Draft & Korean Labor Law Checks'}
-          </h2>
-          <p className="text-sm text-gray-500">
-            {isKo
-              ? '2026 최저임금(₩10,320/hr), 법정 휴게시간(4h→30m, 8h→1h), 주휴수당(15h 기준), 조기 퇴근 시뮬레이션'
-              : '2026 minimum wage (₩10,320/hr), mandatory breaks, 주휴수당 (15h threshold), and early-cut simulator'}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleToggle5Plus}
-          className={`px-3.5 py-2 rounded-lg text-xs font-bold border transition ${
-            has5Plus
-              ? 'bg-teal-50 border-teal-300 text-teal-900'
-              : 'bg-gray-100 border-gray-300 text-gray-700'
-          }`}
-        >
-          {isKo
-            ? `5인 이상 사업장 가산수당(1.5x): ${has5Plus ? '적용 중 (ON)' : '미적용 (OFF)'}`
-            : `5+ Employees 1.5x Multiplier: ${has5Plus ? 'ON' : 'OFF'}`}
-        </button>
-      </div>
+    <div>
+      <h1 className="ss-page-title">
+        {isKo ? '주간 인력 스케줄 초안 & 근로기준법 점검' : 'Weekly labor schedule draft & Korean labor law checks'}
+      </h1>
+      <p className="ss-page-desc">
+        {isKo
+          ? '2026 최저임금(₩10,320/hr), 법정 휴게시간(4h→30m, 8h→1h), 주휴수당(15h 기준), 조기 퇴근 시뮬레이터입니다.'
+          : '2026 minimum wage (₩10,320/hr), mandatory rest breaks, 주휴수당 (15 h threshold), and slow-shift early-cut simulator.'}
+      </p>
 
       {/* Mandatory Non-Payroll Disclaimer Banner */}
-      <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl flex items-start space-x-3 text-xs text-amber-900">
-        <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-        <div>
-          <p className="font-bold text-sm">
-            {isKo ? '급여 미실행 및 스케줄링 추정치 고지 (Disclaimer)' : 'Scheduling Estimate Disclaimer (No Real Payroll)'}
-          </p>
-          <p className="mt-0.5">{isKo ? disclaimerKo : disclaimerEn}</p>
+      <div className="ss-note mb-6">
+        <Info className="w-4 h-4" aria-hidden="true" />
+        <div className="flex-1 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="font-bold text-sm">
+              {isKo ? '급여 미실행 및 스케줄링 추정치 고지 (Disclaimer)' : 'Scheduling estimate disclaimer (not payroll)'}
+            </p>
+            <p className="text-sm ss-muted mt-0.5">{isKo ? disclaimerKo : disclaimerEn}</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleToggle5Plus}
+            aria-pressed={has5Plus}
+            className={`px-3 py-2 text-xs font-bold border cursor-pointer ${
+              has5Plus
+                ? 'bg-ink text-paper border-ink'
+                : 'bg-paper text-ink border-ink/35 hover:bg-ink/5'
+            }`}
+          >
+            {isKo
+              ? `5인 이상 가산수당 (1.5×): ${has5Plus ? '적용 중' : '미적용'}`
+              : `5+ employees 1.5× multiplier: ${has5Plus ? 'On' : 'Off'}`}
+          </button>
         </div>
       </div>
 
-      {/* Canonical Labor Budget & Peak Staffing Fixture Cards */}
+      {/* Canonical Labor Budget & Peak Staffing Fixture Tiles */}
       {budgetSummary && (
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-            <p className="text-xs text-gray-500">
-              {isKo ? `목표 인건비 예산 (매출 ₩${budgetSummary.projected_sales_krw.toLocaleString()}의 ${budgetSummary.target_labor_pct}%)` : `Labor Budget (${budgetSummary.target_labor_pct}% of ₩${budgetSummary.projected_sales_krw.toLocaleString()})`}
-            </p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">
-              ₩{budgetSummary.labor_budget_krw.toLocaleString()}
-            </p>
+        <section className="ss-section">
+          <h2 className="ss-section-title">
+            {isKo ? '인건비 예산 및 피크 배치 기준' : 'Labor budget & peak staffing'}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="ss-tile">
+              <div className="ss-figure">₩{budgetSummary.labor_budget_krw.toLocaleString()}</div>
+              <div className="ss-figure-label">
+                {isKo
+                  ? `목표 인건비 예산 (매출 ₩${budgetSummary.projected_sales_krw.toLocaleString()}의 ${budgetSummary.target_labor_pct}%)`
+                  : `Labor budget (${budgetSummary.target_labor_pct}% of ₩${budgetSummary.projected_sales_krw.toLocaleString()})`}
+              </div>
+            </div>
+
+            <div className="ss-tile">
+              <div className="ss-figure">
+                ₩{budgetSummary.draft_cost_krw.toLocaleString()} ({budgetSummary.draft_labor_pct}%)
+              </div>
+              <div className="ss-figure-label">
+                {isKo
+                  ? `스케줄 초안 (${budgetSummary.draft_hours}시간 × ₩${budgetSummary.avg_hourly_wage_krw.toLocaleString()})`
+                  : `Draft cost (${budgetSummary.draft_hours} h × ₩${budgetSummary.avg_hourly_wage_krw.toLocaleString()})`}
+              </div>
+              <p className="ss-meta mt-2 tabular-nums">
+                {isKo
+                  ? `예산 대비 ₩${budgetSummary.budget_remaining_krw.toLocaleString()} 여유`
+                  : `₩${budgetSummary.budget_remaining_krw.toLocaleString()} under budget`}
+              </p>
+            </div>
+
+            <div className="ss-tile">
+              <div className="ss-figure">
+                {budgetSummary.peak_front_staff}{isKo ? '명' : ''}
+              </div>
+              <div className="ss-figure-label">
+                {isKo ? '저녁 피크 홀 권장 인원 (48식/h ÷ 14식)' : 'Peak front staff (48 covers/h ÷ 14)'}
+              </div>
+              <p className="ss-meta mt-2">
+                {isKo ? '18:00~19:30 저녁 피크 기준' : '18:00–19:30 dinner peak'}
+              </p>
+            </div>
+
+            <div className="ss-tile">
+              <div className="ss-figure">₩{minWageKrw.toLocaleString()}/hr</div>
+              <div className="ss-figure-label">
+                {isKo ? '2026년 법정 최저임금 기준' : '2026 statutory minimum wage'}
+              </div>
+              <p className="ss-meta mt-2">
+                {isKo ? '전 직원 최저임금 이상 준수' : 'All 8 staff meet minimum wage'}
+              </p>
+            </div>
           </div>
-          <div className="bg-white p-4 rounded-xl border border-teal-300 shadow-sm">
-            <p className="text-xs text-teal-800 font-semibold">
-              {isKo ? `스케줄 초안 인건비 (${budgetSummary.draft_hours}시간 × ₩${budgetSummary.avg_hourly_wage_krw.toLocaleString()})` : `Draft Cost (${budgetSummary.draft_hours}h × ₩${budgetSummary.avg_hourly_wage_krw.toLocaleString()})`}
-            </p>
-            <p className="text-2xl font-bold text-teal-800 mt-1">
-              ₩{budgetSummary.draft_cost_krw.toLocaleString()}{' '}
-              <span className="text-sm font-semibold">({budgetSummary.draft_labor_pct}%)</span>
-            </p>
-            <p className="text-[11px] text-emerald-700 mt-1">
-              {isKo
-                ? `예산 대비 ₩${budgetSummary.budget_remaining_krw.toLocaleString()} 절감`
-                : `₩${budgetSummary.budget_remaining_krw.toLocaleString()} under budget`}
-            </p>
-          </div>
-          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-            <p className="text-xs text-gray-500">
-              {isKo ? '피크 시간대 홀 필요 인원 (48식/시간 ÷ 14식)' : 'Peak Front Staffing (48 covers/h ÷ 14)'}
-            </p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">
-              {budgetSummary.peak_front_staff} {isKo ? '명 (홀 서빙)' : 'Front Staff'}
-            </p>
-            <p className="text-[11px] text-gray-500 mt-1">
-              {isKo ? '18:00~19:30 저녁 피크 기준' : '18:00–19:30 Dinner Peak'}
-            </p>
-          </div>
-          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-            <p className="text-xs text-gray-500">
-              {isKo ? '2026년 법정 최저임금 기준' : '2026 Statutory Minimum Wage'}
-            </p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">
-              ₩{minWageKrw.toLocaleString()}<span className="text-xs font-normal text-gray-500">/hr</span>
-            </p>
-            <p className="text-[11px] text-emerald-700 mt-1">
-              {isKo ? '전 직원 최저임금 이상 준수' : 'All 8 staff ≥ minimum wage'}
-            </p>
-          </div>
-        </div>
+        </section>
       )}
 
       {/* Staff Schedule Table with Korean Labor Rule Checks */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-200">
-          <h3 className="font-bold text-gray-800 text-sm flex items-center space-x-2">
-            <Users className="w-4 h-4 text-teal-700" />
-            <span>{isKo ? '직원별 주간 근무표 및 근로기준법 자동 점검' : 'Staff Weekly Schedule & Korean Labor Standards Checks'}</span>
-          </h3>
-        </div>
+      <section className="ss-section">
+        <h2 className="ss-section-title">
+          <Users className="w-5 h-5" aria-hidden="true" />
+          <span>{isKo ? '직원별 주간 근무표 및 근로기준법 점검' : 'Staff weekly schedule & compliance checks'}</span>
+        </h2>
 
         {loading ? (
-          <div className="p-8 text-center text-sm text-gray-400">
+          <div className="p-8 border border-ink/15 text-center text-sm ss-muted">
             {isKo ? '근무 스케줄 불러오는 중...' : 'Loading labor schedule...'}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
+          <div className="ss-table-wrap">
+            <table className="ss-table">
               <thead>
-                <tr className="bg-gray-50 text-gray-500 text-xs uppercase border-b border-gray-200">
-                  <th className="py-3 px-4">{isKo ? '이름 / 역할' : 'Staff / Role'}</th>
-                  <th className="py-3 px-4 text-right">{isKo ? '시급' : 'Hourly Wage'}</th>
-                  <th className="py-3 px-4">{isKo ? '일 근무 / 휴게시간' : 'Shift / Break'}</th>
-                  <th className="py-3 px-4 text-right">{isKo ? '주 유급시간' : 'Weekly Hours'}</th>
-                  <th className="py-3 px-4 text-right">{isKo ? '주휴수당 (≥15h)' : '주휴수당 (≥15h)'}</th>
-                  <th className="py-3 px-4 text-right">{isKo ? '주간 추정 합계' : 'Est. Weekly Total'}</th>
-                  <th className="py-3 px-4">{isKo ? '법규 점검 상태' : 'Compliance'}</th>
+                <tr>
+                  <th>{isKo ? '이름 / 역할' : 'Staff / role'}</th>
+                  <th className="ss-num">{isKo ? '시급' : 'Hourly wage'}</th>
+                  <th>{isKo ? '일 근무 / 휴게시간' : 'Shift / break'}</th>
+                  <th className="ss-num">{isKo ? '주 유급시간' : 'Weekly hours'}</th>
+                  <th className="ss-num">{isKo ? '주휴수당 (≥15h)' : '주휴수당 (≥15h)'}</th>
+                  <th className="ss-num">{isKo ? '주간 추정 합계' : 'Est. weekly total'}</th>
+                  <th>{isKo ? '법규 점검 상태' : 'Compliance'}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                {staffRows.map(st => (
-                  <tr key={st.staff_id} className="hover:bg-gray-50">
-                    <td className="py-3 px-4 font-semibold text-gray-900">
-                      {isKo ? st.name_ko : st.name_en}
-                      <span className="ml-2 px-2 py-0.5 text-[11px] rounded bg-gray-100 text-gray-600 uppercase">
-                        {st.role}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono text-xs">
-                      ₩{st.hourly_wage_krw.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-4 text-xs text-gray-700">
-                      {st.scheduled_days}{isKo ? '일' : 'd'} × {st.shift_duration_hours}h{' '}
-                      <span className="text-gray-500">
-                        ({isKo ? `휴게 ${st.break_minutes}분` : `break ${st.break_minutes}m`})
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-gray-900">
-                      {st.weekly_paid_hours}h{' '}
-                      <span className="text-xs font-normal text-gray-400">/ {st.max_weekly_hours}h</span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono text-xs">
-                      {st.juhyu_eligible ? (
-                        <span className="text-amber-800 font-semibold">
-                          ₩{st.juhyu_allowance_krw.toLocaleString()}
+              <tbody>
+                {staffRows.map(st => {
+                  const hasViolation = st.violations.length > 0;
+                  return (
+                    <tr key={st.staff_id} className={hasViolation ? 'ss-row-critical' : ''}>
+                      <td>
+                        <span className="font-bold">{isKo ? st.name_ko : st.name_en}</span>
+                        <span className="ss-chip ss-chip-ok ml-2 capitalize">{st.role}</span>
+                      </td>
+                      <td className="ss-num">₩{st.hourly_wage_krw.toLocaleString()}</td>
+                      <td className="tabular-nums">
+                        {st.scheduled_days}{isKo ? '일' : 'd'} × {st.shift_duration_hours}h{' '}
+                        <span className="ss-muted">
+                          ({isKo ? `휴게 ${st.break_minutes}분` : `break ${st.break_minutes}m`})
                         </span>
-                      ) : (
-                        <span className="text-gray-400">₩0 (&lt;15h)</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-teal-800">
-                      ₩{st.total_estimated_weekly_pay_krw.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-4 text-xs">
-                      {st.violations.length === 0 ? (
-                        <span className="inline-flex items-center text-emerald-700 font-semibold">
-                          <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                          {isKo ? '준수 (OK)' : 'Compliant'}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center text-red-600 font-semibold">
-                          <ShieldAlert className="w-3.5 h-3.5 mr-1" />
-                          {st.violations[0]}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="ss-num font-bold">
+                        {st.weekly_paid_hours}h{' '}
+                        <span className="text-xs font-normal ss-muted">/ {st.max_weekly_hours}h</span>
+                      </td>
+                      <td className="ss-num">
+                        {st.juhyu_eligible ? (
+                          <span className="ss-chip ss-chip-attention">
+                            ₩{st.juhyu_allowance_krw.toLocaleString()}
+                          </span>
+                        ) : (
+                          <span className="ss-muted">₩0 (&lt;15h)</span>
+                        )}
+                      </td>
+                      <td className="ss-num font-bold">
+                        ₩{st.total_estimated_weekly_pay_krw.toLocaleString()}
+                      </td>
+                      <td>
+                        {!hasViolation ? (
+                          <span className="ss-chip ss-chip-ok">
+                            <CheckCircle2 aria-hidden="true" />
+                            {isKo ? '준수 (Compliant)' : 'Compliant'}
+                          </span>
+                        ) : (
+                          <span className="ss-chip ss-chip-critical">
+                            <ShieldAlert aria-hidden="true" />
+                            {st.violations[0]}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Early-Cut Simulator Panel */}
-      <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
-        <div className="flex items-center space-x-2">
-          <Scissors className="w-4 h-4 text-teal-700" />
-          <h3 className="font-bold text-gray-800 text-sm">
-            {isKo ? '한산 시간대 조기 퇴근(Early-Cut) 시뮬레이터' : 'Slow-Shift Early-Cut Simulator'}
-          </h3>
-        </div>
+      <section className="ss-section">
+        <h2 className="ss-section-title">
+          <Scissors className="w-5 h-5" aria-hidden="true" />
+          <span>{isKo ? '한산 시간대 조기 퇴근(Early-cut) 시뮬레이터' : 'Slow-shift early-cut simulator'}</span>
+        </h2>
 
-        <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 items-end">
+        <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 items-end mb-4">
           <div>
-            <label className="block text-[11px] font-semibold text-gray-600 mb-1">
-              {isKo ? '예상 시간당 식수' : 'Projected Covers/h'}
+            <label className="ss-label">
+              {isKo ? '예상 시간당 식수' : 'Projected covers/h'}
             </label>
             <input
               type="number"
               value={simProjectedCovers}
               onChange={e => setSimProjectedCovers(Number(e.target.value))}
-              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs"
+              className="ss-input w-full tabular-nums"
             />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-gray-600 mb-1">
-              {isKo ? '실제 시간당 식수' : 'Actual Covers/h'}
+            <label className="ss-label">
+              {isKo ? '실제 시간당 식수' : 'Actual covers/h'}
             </label>
             <input
               type="number"
               value={simActualCovers}
               onChange={e => setSimActualCovers(Number(e.target.value))}
-              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs"
+              className="ss-input w-full tabular-nums"
             />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-gray-600 mb-1">
-              {isKo ? '현재 배치 홀 인원' : 'Scheduled Staff'}
+            <label className="ss-label">
+              {isKo ? '현재 배치 홀 인원' : 'Scheduled staff'}
             </label>
             <input
               type="number"
               value={simScheduledStaff}
               onChange={e => setSimScheduledStaff(Number(e.target.value))}
-              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs"
+              className="ss-input w-full tabular-nums"
             />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-gray-600 mb-1">
-              {isKo ? '단축 시간 (시간)' : 'Cut Hours'}
+            <label className="ss-label">
+              {isKo ? '단축 시간 (h)' : 'Cut hours'}
             </label>
             <input
               type="number"
               step="0.5"
               value={simCutHours}
               onChange={e => setSimCutHours(Number(e.target.value))}
-              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs"
+              className="ss-input w-full tabular-nums"
             />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-gray-600 mb-1">
-              {isKo ? '대상 직원 주 누적시간' : 'Staff Weekly Hrs'}
+            <label className="ss-label">
+              {isKo ? '직원 주 누적시간' : 'Staff weekly hours'}
             </label>
             <input
               type="number"
               step="0.5"
               value={simWeeklyHours}
               onChange={e => setSimWeeklyHours(Number(e.target.value))}
-              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs"
+              className="ss-input w-full tabular-nums"
             />
           </div>
           <button
             type="button"
             onClick={runEarlyCutSimulation}
-            className="py-2 px-4 bg-[#078B79] text-white rounded-lg text-xs font-bold hover:bg-teal-800 transition"
+            className="ss-btn ss-btn-primary"
           >
-            {isKo ? '절감액 계산' : 'Simulate Cut'}
+            {isKo ? '절감액 계산' : 'Calculate savings'}
           </button>
         </div>
 
         {simResult && (
-          <div className="p-4 bg-teal-50/70 border border-teal-200 rounded-xl grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-            <div>
-              <span className="text-gray-500 block">{isKo ? '권장 유지 인원 / 조기퇴근 가능' : 'Active Needed / Removable'}</span>
-              <span className="font-bold text-sm text-gray-900">
-                {isKo
-                  ? `유지 ${simResult.recommended_active_staff}명 / 조기퇴근 ${simResult.removable_staff_count}명`
-                  : `Keep ${simResult.recommended_active_staff} / Cut ${simResult.removable_staff_count} staff`}
-              </span>
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div className="ss-tile">
+              <div className="ss-figure">
+                {simResult.recommended_active_staff} / {simResult.removable_staff_count}
+              </div>
+              <div className="ss-figure-label">
+                {isKo ? '권장 유지 인원 / 조기퇴근 가능' : 'Keep active / removable staff'}
+              </div>
             </div>
-            <div>
-              <span className="text-gray-500 block">{isKo ? '직접 시급 절감액' : 'Direct Wage Saved'}</span>
-              <span className="font-mono font-bold text-sm text-teal-800">
-                ₩{simResult.direct_wage_saved_krw.toLocaleString()}
-              </span>
+            <div className="ss-tile">
+              <div className="ss-figure">₩{simResult.direct_wage_saved_krw.toLocaleString()}</div>
+              <div className="ss-figure-label">
+                {isKo ? '직접 시급 절감액' : 'Direct wage saved'}
+              </div>
             </div>
-            <div>
-              <span className="text-gray-500 block">{isKo ? '주휴수당(15h 미만 전환) 영향' : '15h 주휴수당 Threshold Impact'}</span>
-              <span className="font-mono font-bold text-sm text-amber-800">
+            <div className="ss-tile">
+              <div className="ss-figure">
                 {simResult.crossed_below_15h_juhyu
-                  ? `₩${simResult.juhyu_saved_krw.toLocaleString()} (15h 미만 전환)`
-                  : '₩0 (변동 없음)'}
-              </span>
+                  ? `₩${simResult.juhyu_saved_krw.toLocaleString()}`
+                  : '₩0'}
+              </div>
+              <div className="ss-figure-label">
+                {isKo ? '주휴수당 (15h 기준) 영향' : '15 h 주휴수당 threshold impact'}
+              </div>
             </div>
-            <div>
-              <span className="text-gray-500 block">{isKo ? '총 추정 절감 인건비' : 'Total Estimated Savings'}</span>
-              <span className="font-mono font-bold text-base text-emerald-700">
-                ₩{simResult.total_estimated_savings_krw.toLocaleString()}
-              </span>
+            <div className="ss-tile ss-tile-attention">
+              <div className="ss-figure">₩{simResult.total_estimated_savings_krw.toLocaleString()}</div>
+              <div className="ss-figure-label">
+                {isKo ? '총 추정 절감 인건비' : 'Total estimated savings'}
+              </div>
             </div>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
-  LayoutDashboard, TrendingUp, Boxes, ShoppingCart, 
+import {
+  LayoutDashboard, TrendingUp, Boxes, ShoppingCart,
   ChefHat, Trash2, Users, Settings as SettingsIcon,
-  Clock, Globe
+  Clock, Languages, FlaskConical
 } from 'lucide-react';
 import ForecastView from './components/ForecastView';
 import InventoryScanView from './components/InventoryScanView';
@@ -17,11 +17,15 @@ import SettingsAuditView from './components/SettingsAuditView';
 export default function App() {
   const { t, i18n } = useTranslation();
   const [currentTab, setCurrentTab] = useState('summary');
-  const [demoClock] = useState('2026-11-04 09:00 (수/Wed)');
+  const isKo = i18n.language.startsWith('ko');
+  const demoClock = isKo ? '2026-11-04 (수) 09:00' : 'Wed 4 Nov 2026, 09:00';
+
+  useEffect(() => {
+    document.documentElement.lang = isKo ? 'ko' : 'en';
+  }, [isKo]);
 
   const toggleLanguage = () => {
-    const nextLng = i18n.language.startsWith('ko') ? 'en' : 'ko';
-    i18n.changeLanguage(nextLng);
+    i18n.changeLanguage(isKo ? 'en' : 'ko');
   };
 
   const navItems = [
@@ -36,51 +40,49 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-[#1A202C] flex flex-col font-sans">
-      {/* Top Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-lg bg-[#078B79] flex items-center justify-center text-white font-bold text-xl shadow-sm">
-              S
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-bold text-lg text-gray-900 tracking-tight">ShelfSense</span>
-                <span className="px-2 py-0.5 text-xs font-semibold rounded bg-amber-100 text-amber-800 border border-amber-300">
+    <div className="min-h-screen bg-paper text-ink flex flex-col">
+      {/* Header: logo always sits on paper (DESIGN.md §10) */}
+      <header className="bg-paper sticky top-0 z-50">
+        <div className="max-w-[1200px] mx-auto px-4 md:px-6 h-16 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <img src="/logo.png" alt="" className="h-10 w-auto shrink-0" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-[21px] font-bold leading-none">{t('app_name')}</span>
+                <span className="ss-chip ss-chip-info" data-testid="demo-badge">
+                  <FlaskConical aria-hidden="true" />
                   {t('demo_data_badge')}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 hidden sm:block">
-                {t('demo_data_subtitle')}
-              </p>
+              <p className="ss-meta hidden sm:block truncate mt-1">{t('demo_data_subtitle')}</p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
-            {/* Demo Clock Indicator */}
-            <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-gray-100 rounded-full text-xs font-medium text-gray-700">
-              <Clock className="w-3.5 h-3.5 text-teal-700" />
-              <span>{demoClock}</span>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="hidden md:flex items-center gap-1.5 text-sm" title={t('demo_clock')}>
+              <Clock className="w-4 h-4" aria-hidden="true" />
+              <span className="tabular-nums">{demoClock}</span>
             </div>
-
-            {/* Language Switcher */}
             <button
               onClick={toggleLanguage}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 text-sm font-semibold transition"
-              title="Toggle English / 한국어"
+              className="ss-btn ss-btn-secondary ss-btn-sm"
+              title="English / 한국어"
             >
-              <Globe className="w-4 h-4 text-gray-600" />
-              <span>{i18n.language.startsWith('ko') ? 'ENG' : '한국어'}</span>
+              <Languages className="w-4 h-4" aria-hidden="true" />
+              <span>{isKo ? 'English' : '한국어'}</span>
             </button>
           </div>
         </div>
+        {/* The shelf rail — signature structural element */}
+        <div className="ss-rail" />
       </header>
 
-      {/* Main Body with Sidebar Navigation */}
-      <div className="flex-1 max-w-7xl w-full mx-auto flex flex-col md:flex-row">
-        {/* Navigation Bar */}
-        <aside className="w-full md:w-60 bg-white border-r border-gray-200 p-3 md:py-6 flex md:flex-col overflow-x-auto space-x-1 md:space-x-0 md:space-y-1">
+      <div className="flex-1 max-w-[1200px] w-full mx-auto flex flex-col md:flex-row">
+        {/* Navigation */}
+        <nav
+          aria-label="Main"
+          className="w-full md:w-[232px] shrink-0 md:border-r md:border-ink/15 px-3 py-3 md:py-6 flex md:flex-col overflow-x-auto gap-1 border-b border-ink/15 md:border-b-0"
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = currentTab === item.id;
@@ -88,21 +90,21 @@ export default function App() {
               <button
                 key={item.id}
                 onClick={() => setCurrentTab(item.id)}
-                className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition whitespace-nowrap ${
-                  active 
-                    ? 'bg-[#078B79] text-white shadow-sm' 
-                    : 'text-gray-600 hover:bg-gray-100'
+                aria-current={active ? 'page' : undefined}
+                className={`flex items-center gap-3 px-3 min-h-[44px] md:min-h-[40px] text-sm whitespace-nowrap text-left transition-colors ${
+                  active
+                    ? 'bg-ink text-paper font-bold shadow-[inset_4px_0_0_var(--color-signal)]'
+                    : 'text-ink/70 hover:text-ink hover:bg-ink/5'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${active ? 'text-white' : 'text-gray-500'}`} />
+                <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
                 <span>{item.label}</span>
               </button>
             );
           })}
-        </aside>
+        </nav>
 
-        {/* Content Area */}
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 min-w-0 p-4 md:p-8">
           {currentTab === 'summary' ? (
             <SummaryView onNavigate={tab => setCurrentTab(tab)} />
           ) : currentTab === 'forecast' ? (

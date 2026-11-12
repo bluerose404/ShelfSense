@@ -74,8 +74,8 @@ export default function SettingsAuditView() {
       .then(() => {
         setSavedBanner(
           isKo
-            ? '시스템 설정이 저장되었으며 감사 로그(Audit Log)에 기록되었습니다.'
-            : 'System settings saved and recorded in the immutable Audit Log.'
+            ? '설정이 저장되었으며 감사 로그에 기록되었습니다.'
+            : 'Settings saved and recorded in the audit log.'
         );
         fetchSettingsAndAudit();
       })
@@ -83,207 +83,200 @@ export default function SettingsAuditView() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">
-          {isKo ? '시스템 설정 & 불변 감사 로그 (Audit Log)' : 'System Settings & Immutable Audit Log'}
-        </h2>
-        <p className="text-sm text-gray-500">
-          {isKo
-            ? '자율성 수준(1~2단계), 발주 버퍼 및 예산 한도, 근로기준법 파라미터 설정과 모든 의사결정 감사 이력을 조회합니다.'
-            : 'Configure human-in-the-loop autonomy (Levels 1–2), order guardrails, Korean labor parameters, and inspect the audit trail.'}
-        </p>
-      </div>
+    <div>
+      <h1 className="ss-page-title">
+        {isKo ? '시스템 설정 & 감사 로그 (Audit log)' : 'Settings & audit log'}
+      </h1>
+      <p className="ss-page-desc">
+        {isKo
+          ? '자율성 수준(1~2단계), 발주 버퍼 및 예산 한도, 근로기준법 파라미터 설정과 모든 의사결정 감사 이력을 조회합니다.'
+          : 'Configure human-in-the-loop autonomy (Levels 1–2), order guardrails, Korean labor parameters, and inspect the audit trail.'}
+      </p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left: System Configuration Form */}
-        <form
-          onSubmit={handleSaveSettings}
-          className="lg:col-span-5 bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4"
-        >
-          <div className="flex items-center space-x-2 pb-2 border-b border-gray-100">
-            <Settings className="w-4 h-4 text-teal-700" />
-            <h3 className="font-bold text-gray-800 text-sm">
-              {isKo ? '운영 정책 및 가드레일 설정' : 'Operating Policy & Guardrail Settings'}
-            </h3>
-          </div>
+        <section className="lg:col-span-5 ss-section">
+          <h2 className="ss-section-title">
+            <Settings className="w-5 h-5" aria-hidden="true" />
+            <span>{isKo ? '운영 정책 및 가드레일 설정' : 'Operating policy & guardrails'}</span>
+          </h2>
 
-          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-between text-xs">
-            <span className="text-gray-600 font-medium">
-              {isKo ? '시뮬레이션 데모 시계 (고정 기준점):' : 'Simulated Demo Clock (Fixed Anchor):'}
-            </span>
-            <span className="font-mono font-bold text-teal-800">{demoClock} (Wed)</span>
-          </div>
+          <form onSubmit={handleSaveSettings} className="space-y-4">
+            <div className="ss-note justify-between">
+              <span className="text-xs ss-muted">
+                {isKo ? '시뮬레이션 데모 시계 (고정 기준점):' : 'Simulated demo clock (fixed anchor):'}
+              </span>
+              <span className="font-bold text-xs tabular-nums">{demoClock} (Wed)</span>
+            </div>
 
-          {/* Autonomy Level Selector with Level 3 Disabled */}
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold text-gray-700">
-              {isKo ? '발주 자율성 단계 (Human-in-the-Loop)' : 'Ordering Autonomy Level'}
-            </label>
+            {/* Autonomy Level Selector with Level 3 Disabled */}
             <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => setAutonomyLevel(1)}
-                className={`w-full p-2.5 rounded-lg border text-left text-xs transition ${
-                  autonomyLevel === 1
-                    ? 'border-[#078B79] bg-teal-50/70 font-bold text-teal-900'
-                    : 'border-gray-200 text-gray-700'
-                }`}
-              >
-                {isKo ? 'Level 1: 개별 제안 및 검토 (Suggest Only)' : 'Level 1: Suggest Only'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setAutonomyLevel(2)}
-                className={`w-full p-2.5 rounded-lg border text-left text-xs transition ${
-                  autonomyLevel === 2
-                    ? 'border-[#078B79] bg-teal-50/70 font-bold text-teal-900'
-                    : 'border-gray-200 text-gray-700'
-                }`}
-              >
-                {isKo ? 'Level 2: 원탭 일괄 승인 (One-Tap Approve)' : 'Level 2: One-Tap Approve'}
-              </button>
-              <button
-                type="button"
-                disabled
-                aria-disabled="true"
-                className="w-full p-2.5 rounded-lg border border-gray-200 bg-gray-100 text-gray-400 text-left text-xs cursor-not-allowed flex items-center justify-between"
-              >
-                <span>
-                  {isKo
-                    ? 'Level 3: 완전 자동 발주 (사장님 승인 필수 원칙으로 비활성화)'
-                    : 'Level 3: Full Auto-Order (Disabled by human-in-the-loop rule)'}
-                </span>
-                <Lock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                {isKo ? '기본 안전 버퍼 (%)' : 'Safety Buffer (%)'}
+              <label className="ss-label">
+                {isKo ? '발주 자율성 단계 (Human-in-the-loop)' : 'Ordering autonomy level'}
               </label>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setAutonomyLevel(1)}
+                  className={`w-full p-3 border text-left text-xs cursor-pointer ${
+                    autonomyLevel === 1
+                      ? 'bg-ink text-paper border-ink font-bold'
+                      : 'bg-paper text-ink border-ink/35 hover:bg-ink/5'
+                  }`}
+                >
+                  {isKo ? 'Level 1: 개별 제안 및 검토 (Suggest only)' : 'Level 1: Suggest only'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAutonomyLevel(2)}
+                  className={`w-full p-3 border text-left text-xs cursor-pointer ${
+                    autonomyLevel === 2
+                      ? 'bg-ink text-paper border-ink font-bold'
+                      : 'bg-paper text-ink border-ink/35 hover:bg-ink/5'
+                  }`}
+                >
+                  {isKo ? 'Level 2: 원탭 일괄 승인 (One-tap approve)' : 'Level 2: One-tap approve'}
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  aria-disabled="true"
+                  className="w-full p-3 border border-dashed border-ink/35 bg-paper text-ink/35 text-left text-xs cursor-not-allowed flex items-center justify-between gap-2"
+                >
+                  <span>
+                    {isKo
+                      ? 'Level 3: 완전 자동 발주 (사장님 승인 필수 원칙으로 비활성화)'
+                      : 'Level 3: Full auto-order (disabled by human-in-the-loop rule)'}
+                  </span>
+                  <Lock className="w-4 h-4 shrink-0" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="ss-label">
+                  {isKo ? '기본 안전 버퍼 (%)' : 'Safety buffer (%)'}
+                </label>
+                <input
+                  type="number"
+                  value={bufferPct}
+                  onChange={e => setBufferPct(Number(e.target.value))}
+                  className="ss-input w-full tabular-nums"
+                />
+              </div>
+              <div>
+                <label className="ss-label">
+                  {isKo ? '단가 급등 경고 기준 (%)' : 'Price surge flag (%)'}
+                </label>
+                <input
+                  type="number"
+                  value={priceFlagPct}
+                  onChange={e => setPriceFlagPct(Number(e.target.value))}
+                  className="ss-input w-full tabular-nums"
+                />
+              </div>
+              <div>
+                <label className="ss-label">
+                  {isKo ? '1회 발주 금액 상한 (₩)' : 'Order spend cap (₩)'}
+                </label>
+                <input
+                  type="number"
+                  step="50000"
+                  value={spendCapKrw}
+                  onChange={e => setSpendCapKrw(Number(e.target.value))}
+                  className="ss-input w-full tabular-nums"
+                />
+              </div>
+              <div>
+                <label className="ss-label">
+                  {isKo ? '목표 인건비 비율 (%)' : 'Target labor cost (%)'}
+                </label>
+                <input
+                  type="number"
+                  value={targetLaborPct}
+                  onChange={e => setTargetLaborPct(Number(e.target.value))}
+                  className="ss-input w-full tabular-nums"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 items-end">
+              <div>
+                <label className="ss-label">
+                  {isKo ? '적용 최저임금 (₩/hr)' : 'Minimum wage (₩/hr)'}
+                </label>
+                <input
+                  type="number"
+                  value={minWageKrw}
+                  onChange={e => setMinWageKrw(Number(e.target.value))}
+                  className="ss-input w-full tabular-nums"
+                />
+              </div>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setMinWageKrw(10320)}
+                  className="ss-btn ss-btn-secondary ss-btn-sm"
+                >
+                  2026 (₩10,320)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMinWageKrw(10700)}
+                  className="ss-btn ss-btn-secondary ss-btn-sm"
+                >
+                  2027 (₩10,700)
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 border border-ink/35">
+              <span className="text-xs font-bold">
+                {isKo ? '5인 이상 사업장 연장·야간·휴일 가산수당 (1.5×)' : '5+ employees overtime/night/holiday 1.5×'}
+              </span>
               <input
-                type="number"
-                value={bufferPct}
-                onChange={e => setBufferPct(Number(e.target.value))}
-                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs"
+                type="checkbox"
+                checked={has5Plus}
+                onChange={e => setHas5Plus(e.target.checked)}
+                className="w-4 h-4 accent-[#04225c]"
               />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                {isKo ? '단가 급등 경고 기준 (%)' : 'Price Surge Flag (%)'}
-              </label>
-              <input
-                type="number"
-                value={priceFlagPct}
-                onChange={e => setPriceFlagPct(Number(e.target.value))}
-                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                {isKo ? '1회 발주 금액 상한 (₩)' : 'Order Spend Cap (₩)'}
-              </label>
-              <input
-                type="number"
-                step="50000"
-                value={spendCapKrw}
-                onChange={e => setSpendCapKrw(Number(e.target.value))}
-                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                {isKo ? '목표 인건비 비율 (%)' : 'Target Labor Cost (%)'}
-              </label>
-              <input
-                type="number"
-                value={targetLaborPct}
-                onChange={e => setTargetLaborPct(Number(e.target.value))}
-                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs"
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3 items-end">
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                {isKo ? '적용 최저임금 (₩/hr)' : 'Minimum Wage (₩/hr)'}
-              </label>
-              <input
-                type="number"
-                value={minWageKrw}
-                onChange={e => setMinWageKrw(Number(e.target.value))}
-                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-mono"
-              />
-            </div>
-            <div className="flex space-x-1.5">
-              <button
-                type="button"
-                onClick={() => setMinWageKrw(10320)}
-                className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-[11px] font-semibold text-gray-700"
-              >
-                2026 (₩10,320)
-              </button>
-              <button
-                type="button"
-                onClick={() => setMinWageKrw(10700)}
-                className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-[11px] font-semibold text-gray-700"
-              >
-                2027 (₩10,700)
-              </button>
-            </div>
-          </div>
+            <button
+              type="submit"
+              className="ss-btn ss-btn-primary w-full"
+            >
+              {isKo ? '변경사항 저장' : 'Save changes'}
+            </button>
 
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-            <span className="text-xs font-semibold text-gray-700">
-              {isKo ? '5인 이상 사업장 연장·야간·휴일 가산수당(1.5x)' : '5+ Employees Overtime/Night/Holiday 1.5x'}
-            </span>
-            <input
-              type="checkbox"
-              checked={has5Plus}
-              onChange={e => setHas5Plus(e.target.checked)}
-              className="w-4 h-4 accent-[#078B79]"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full py-2.5 bg-[#078B79] text-white rounded-lg text-xs font-bold hover:bg-teal-800 transition shadow-sm"
-          >
-            {isKo ? '설정 저장 및 감사로그 기록' : 'Save Settings & Write Audit Log'}
-          </button>
-
-          {savedBanner && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 flex items-center space-x-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
-              <span>{savedBanner}</span>
-            </div>
-          )}
-        </form>
+            {savedBanner && (
+              <div className="ss-note ss-note-attention">
+                <CheckCircle2 className="w-4 h-4 text-signal" aria-hidden="true" />
+                <span>{savedBanner}</span>
+              </div>
+            )}
+          </form>
+        </section>
 
         {/* Right: Immutable Audit Log Viewer */}
-        <div className="lg:col-span-7 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
-          <div className="px-5 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center space-x-2">
-              <History className="w-4 h-4 text-teal-700" />
-              <h3 className="font-bold text-gray-800 text-sm">
-                {isKo ? '감사 로그 뷰어 (Audit Trail)' : 'Immutable Audit Log Viewer'}
-              </h3>
-            </div>
+        <section className="lg:col-span-7 ss-section">
+          <div className="ss-section-title justify-between flex-wrap">
+            <span className="inline-flex items-center gap-2">
+              <History className="w-5 h-5" aria-hidden="true" />
+              <span>{isKo ? '감사 로그 (Audit trail)' : 'Audit log'}</span>
+            </span>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2 font-normal">
               <select
                 value={actionFilter}
                 onChange={e => {
                   setActionFilter(e.target.value);
                   fetchSettingsAndAudit(e.target.value);
                 }}
-                className="px-2.5 py-1 border border-gray-300 rounded-lg text-xs bg-white"
+                className="ss-input text-xs min-h-[32px]"
               >
-                <option value="all">{isKo ? '전체 액션' : 'All Actions'}</option>
+                <option value="all">{isKo ? '전체 액션' : 'All actions'}</option>
                 <option value="order_approved">order_approved</option>
                 <option value="order_edited">order_edited</option>
                 <option value="order_rejected">order_rejected</option>
@@ -295,46 +288,47 @@ export default function SettingsAuditView() {
               <button
                 type="button"
                 onClick={() => fetchSettingsAndAudit(actionFilter)}
-                className="p-1.5 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="ss-btn ss-btn-secondary ss-btn-sm"
+                aria-label={isKo ? '새로고침' : 'Refresh'}
               >
-                <RefreshCw className="w-3.5 h-3.5 text-gray-600" />
+                <RefreshCw className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>
 
           {auditLogs.length === 0 ? (
-            <div className="p-8 text-center text-xs text-gray-400">
-              <Shield className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+            <div className="p-8 border border-ink/15 text-center text-sm ss-muted">
+              <Shield className="w-8 h-8 mx-auto mb-2 opacity-50" aria-hidden="true" />
               <p>
                 {isKo
                   ? '기록된 감사 로그가 없습니다. 발주 승인, 바코드 입고, 실사 조정, 설정 변경 시 즉시 기록됩니다.'
-                  : 'No audit log entries yet. Actions such as order approvals, barcode receiving, spot counts, and setting changes appear here.'}
+                  : 'No audit log entries yet. Order approvals, barcode receiving, spot counts, and setting changes appear here.'}
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto max-h-[520px]">
-              <table className="w-full text-left border-collapse text-xs">
+            <div className="ss-table-wrap max-h-[540px]">
+              <table className="ss-table">
                 <thead>
-                  <tr className="bg-gray-50 text-gray-500 uppercase border-b border-gray-200 sticky top-0">
-                    <th className="py-2.5 px-3">ID</th>
-                    <th className="py-2.5 px-3">{isKo ? '액션' : 'Action'}</th>
-                    <th className="py-2.5 px-3">{isKo ? '대상 엔티티' : 'Entity'}</th>
-                    <th className="py-2.5 px-3">{isKo ? '상세 내역 (JSON)' : 'Details (JSON)'}</th>
+                  <tr>
+                    <th>ID</th>
+                    <th>{isKo ? '액션' : 'Action'}</th>
+                    <th>{isKo ? '대상 엔티티' : 'Entity'}</th>
+                    <th>{isKo ? '상세 내역 (JSON)' : 'Details (JSON)'}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody>
                   {auditLogs.map(log => (
-                    <tr key={log.id} className="hover:bg-gray-50">
-                      <td className="py-2.5 px-3 font-mono text-gray-500">#{log.id}</td>
-                      <td className="py-2.5 px-3">
-                        <span className="px-2 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200 font-mono font-semibold">
+                    <tr key={log.id}>
+                      <td className="tabular-nums ss-muted">#{log.id}</td>
+                      <td>
+                        <span className="ss-chip ss-chip-info">
                           {log.action}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 font-medium text-gray-700">
+                      <td className="font-bold whitespace-nowrap">
                         {log.entity_type} {log.entity_id ? `(${log.entity_id})` : ''}
                       </td>
-                      <td className="py-2.5 px-3 font-mono text-[11px] text-gray-600 break-all">
+                      <td className="text-xs ss-muted break-all tabular-nums">
                         {log.details_json}
                       </td>
                     </tr>
@@ -343,7 +337,7 @@ export default function SettingsAuditView() {
               </table>
             </div>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );

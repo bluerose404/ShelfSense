@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Info, Upload } from 'lucide-react';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+import { Info, Upload, CheckCircle2, AlertTriangle } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
 export interface ForecastItem {
@@ -99,207 +99,228 @@ export default function ForecastView() {
   const dailyTotals = aggregateDailyForecastTotals(forecastData, selectedDaypart);
 
   return (
-    <div className="space-y-6">
-      {/* Title & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            {isKo ? '7일 수요 예측 & 백테스트' : '7-Day Demand Forecast & Backtest'}
-          </h2>
-          <p className="text-sm text-gray-500">
-            {isKo 
-              ? '머신러닝(HistGradientBoosting)과 4주 이동평균 베이스라인의 롤링 원점 백테스트 비교'
-              : 'Rolling-origin walk-forward backtest comparison: HistGradientBoosting vs 4-Week Mean baseline'}
-          </p>
+    <div>
+      <h1 className="ss-page-title">
+        {isKo ? '7일 수요 예측 및 백테스트' : '7-day demand forecast & backtest'}
+      </h1>
+      <p className="ss-page-desc">
+        {isKo
+          ? '머신러닝(HistGradientBoosting)과 4주 이동평균 기준선의 8주 롤링 원점 백테스트 비교입니다.'
+          : '8-fold rolling-origin walk-forward backtest comparing HistGradientBoosting against the 4-week mean baseline.'}
+      </p>
+
+      {/* Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="inline-flex border border-ink">
+          {([
+            { id: 'all', ko: '전체 (종일)', en: 'All day' },
+            { id: 'lunch', ko: '점심', en: 'Lunch' },
+            { id: 'dinner', ko: '저녁', en: 'Dinner' },
+          ] as const).map(dp => {
+            const active = selectedDaypart === dp.id;
+            return (
+              <button
+                key={dp.id}
+                type="button"
+                onClick={() => setSelectedDaypart(dp.id)}
+                className={`px-3 py-2 text-sm font-bold cursor-pointer ${
+                  active ? 'bg-ink text-paper' : 'bg-paper text-ink hover:bg-ink/5'
+                }`}
+              >
+                {isKo ? dp.ko : dp.en}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="flex items-center space-x-2">
-          <label className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer shadow-sm">
-            <Upload className="w-3.5 h-3.5 text-teal-700" />
-            <span>{isKo ? '매출 CSV 무결성 검사' : 'Validate Sales CSV'}</span>
-            <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
-          </label>
-
-          <div className="bg-gray-100 p-1 rounded-lg flex text-xs font-medium">
-            <button
-              onClick={() => setSelectedDaypart('all')}
-              className={`px-3 py-1 rounded-md transition ${selectedDaypart === 'all' ? 'bg-white shadow text-teal-800' : 'text-gray-600'}`}
-            >
-              {isKo ? '전체 (종일)' : 'All Day'}
-            </button>
-            <button
-              onClick={() => setSelectedDaypart('lunch')}
-              className={`px-3 py-1 rounded-md transition ${selectedDaypart === 'lunch' ? 'bg-white shadow text-teal-800' : 'text-gray-600'}`}
-            >
-              {isKo ? '점심' : 'Lunch'}
-            </button>
-            <button
-              onClick={() => setSelectedDaypart('dinner')}
-              className={`px-3 py-1 rounded-md transition ${selectedDaypart === 'dinner' ? 'bg-white shadow text-teal-800' : 'text-gray-600'}`}
-            >
-              {isKo ? '저녁' : 'Dinner'}
-            </button>
-          </div>
-        </div>
+        <label className="ss-btn ss-btn-secondary ss-btn-sm">
+          <Upload className="w-4 h-4" aria-hidden="true" />
+          <span>{isKo ? '매출 CSV 무결성 검사' : 'Check sales CSV'}</span>
+          <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
+        </label>
       </div>
 
       {/* CSV Quality Checker Banner if Uploaded */}
       {csvResult && (
-        <div className="p-4 bg-white border rounded-xl shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-sm text-gray-800">
-              {isKo ? 'CSV 검사 결과 (총 행 수: ' : 'CSV Quality Report (Total Rows: '}
-              {csvResult.total_rows})
-            </span>
-            <span className={`text-xs px-2 py-0.5 rounded font-semibold ${csvResult.valid ? 'bg-teal-100 text-teal-800' : 'bg-red-100 text-red-800'}`}>
-              {csvResult.valid ? (isKo ? '정상 포맷' : 'Valid') : (isKo ? '오류 발견' : 'Invalid')}
-            </span>
+        <div className="ss-note mb-6">
+          {csvResult.valid ? (
+            <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+          ) : (
+            <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+          )}
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-bold text-sm">
+                {isKo ? 'CSV 검사 결과 (총 행 수: ' : 'CSV quality report (total rows: '}
+                {csvResult.total_rows})
+              </span>
+              <span className={`ss-chip ${csvResult.valid ? 'ss-chip-ok' : 'ss-chip-critical'}`}>
+                {csvResult.valid ? (isKo ? '정상 포맷' : 'Valid') : (isKo ? '오류 발견' : 'Invalid')}
+              </span>
+            </div>
+            {csvResult.errors.length > 0 && (
+              <div className="text-xs space-y-1">
+                {csvResult.errors.map((e: string, i: number) => <p key={i}>• {e}</p>)}
+              </div>
+            )}
+            {csvResult.warnings.length > 0 && (
+              <div className="text-xs ss-muted space-y-1">
+                {csvResult.warnings.map((w: string, i: number) => <p key={i}>• {w}</p>)}
+              </div>
+            )}
           </div>
-          {csvResult.errors.length > 0 && (
-            <div className="text-xs text-red-600 space-y-1">
-              {csvResult.errors.map((e: string, i: number) => <p key={i}>• {e}</p>)}
-            </div>
-          )}
-          {csvResult.warnings.length > 0 && (
-            <div className="text-xs text-amber-700 space-y-1">
-              {csvResult.warnings.map((w: string, i: number) => <p key={i}>• {w}</p>)}
-            </div>
-          )}
         </div>
       )}
 
-      {/* Honest Backtest Banner */}
-      <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 text-xs text-teal-900 flex items-start space-x-3">
-        <Info className="w-5 h-5 text-teal-700 shrink-0 mt-0.5" />
-        <div>
-          <p className="font-semibold text-sm">
-            {isKo ? '정직한 8주 롤링 원점 백테스트 (Rolling-Origin Evaluation)' : 'Honest 8-Week Rolling-Origin Backtest'}
+      {/* Honest Backtest Note */}
+      <div className="ss-note mb-8">
+        <Info className="w-4 h-4" aria-hidden="true" />
+        <div className="space-y-1">
+          <p className="font-bold text-sm">
+            {isKo ? '정직한 8주 롤링 원점 백테스트 (Rolling-Origin Evaluation)' : '8-week rolling-origin backtest'}
           </p>
-          <p className="text-teal-800 mt-0.5">
+          <p className="text-sm ss-muted">
             {isKo
-              ? '폴드 1~4에서 모델을 자동 선택하고 상한 분위수를 보정했으며, 폴드 5~8(최근 4주) 홀드아웃 평가로 미래 데이터 누수를 엄격히 차단했습니다. 상한선 막대는 중앙 예측치 위에 안전 버퍼(P90 잔차)가 누적된 스택 형태로 표시됩니다.'
-              : 'Models selected and quantile calibrated on folds 1-4; unbiased performance reported on holdout folds 5-8 with zero future leakage. Upper bound is stacked cleanly as safety buffer over median.'}
+              ? '폴드 1~4에서 모델을 선택하고 상한 분위수를 보정했으며, 폴드 5~8(최근 4주) 홀드아웃 평가로 미래 데이터 누수를 차단했습니다. 상한선 막대는 중앙 예측치 위에 안전 버퍼(upper − median)가 누적된 스택으로 표시됩니다.'
+              : 'Models are selected and calibrated on folds 1–4; holdout performance is reported on folds 5–8 with zero future leakage. The upper bound is stacked as (upper − median) on top of the median forecast.'}
           </p>
-          <p className="text-teal-700 font-medium mt-1">
-            * {isKo ? '표시된 정확도는 합성 데모 데이터(Synthetic Demo Data) 기준입니다.' : 'Accuracy shown is on synthetic demo data.'}
+          <p className="ss-meta">
+            {isKo ? '표시된 정확도는 합성 데모 데이터(seed=42) 기준입니다.' : 'Accuracy is measured on deterministic synthetic demo data (seed=42).'}
           </p>
         </div>
       </div>
 
       {/* Main Forecast Chart with Clean Non-Double-Counted Stack */}
-      <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-        <h3 className="font-bold text-gray-800 mb-4 text-sm flex items-center justify-between">
-          <span>{isKo ? '향후 7일 예상 식수 (중앙값 + 안전 상한 버퍼)' : 'Next 7 Days Projected Covers (Median + Safety Buffer)'}</span>
-          <span className="text-xs font-normal text-gray-500">
-            {isKo ? '단위: 식수(그릇)' : 'Unit: Portions'}
+      <section className="ss-section">
+        <div className="ss-section-title justify-between">
+          <span>{isKo ? '향후 7일 예상 식수 (중앙값 + 상한 안전 버퍼)' : 'Next 7 days projected covers (median + upper buffer)'}</span>
+          <span className="ss-meta font-normal">
+            {isKo ? '단위: 식수(그릇)' : 'Unit: portions'}
           </span>
-        </h3>
-        
+        </div>
+
         {loading ? (
-          <div className="h-64 flex items-center justify-center text-sm text-gray-400">
+          <div className="h-64 flex items-center justify-center text-sm ss-muted">
             {isKo ? '예측 데이터 계산 중...' : 'Computing rolling forecasts...'}
           </div>
         ) : (
-          <div className="h-64 w-full">
+          <div className="h-72 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dailyTotals}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip 
+                <defs>
+                  <pattern
+                    id="ss-hatch"
+                    patternUnits="userSpaceOnUse"
+                    width="6"
+                    height="6"
+                    patternTransform="rotate(45)"
+                  >
+                    <rect width="6" height="6" fill="#ffffff" />
+                    <line x1="0" y1="0" x2="0" y2="6" stroke="#0d67f7" strokeWidth="3" />
+                  </pattern>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(4,34,92,0.15)" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 12, fill: 'rgba(4,34,92,0.7)' }}
+                  stroke="rgba(4,34,92,0.35)"
+                />
+                <YAxis
+                  tick={{ fontSize: 12, fill: 'rgba(4,34,92,0.7)' }}
+                  stroke="rgba(4,34,92,0.35)"
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #04225c',
+                    borderRadius: '2px',
+                    boxShadow: 'none',
+                    color: '#04225c',
+                    fontSize: '12px',
+                  }}
                   formatter={(value: any, name: any, item: any) => {
                     if (name === 'medianCovers') {
-                      return [`${value} ${isKo ? '식' : 'portions'}`, isKo ? '중앙 예상치' : 'Median Forecast'];
+                      return [`${value} ${isKo ? '식' : 'portions'}`, isKo ? '중앙 예상 (Median)' : 'Expected (median)'];
                     }
                     if (name === 'upperDelta') {
                       const total = item.payload.upperTotal;
-                      return [`+${value} (총 상한 ${total}식)`, isKo ? '안전 버퍼 (P90)' : 'Safety Buffer (P90)'];
+                      return [
+                        `+${value} (${isKo ? `총 상한 ${total}식` : `upper total ${total}`})`,
+                        isKo ? '추가 안전 버퍼 (P90)' : 'Possible extra (upper bound)',
+                      ];
                     }
                     return [value, name];
                   }}
                 />
-                <Legend 
-                  formatter={(value) => value === 'medianCovers' ? (isKo ? '중앙 예측' : 'Median Forecast') : (isKo ? '안전 상한 버퍼 (P90 잔차)' : 'Safety Buffer (P90 Residual)')}
+                <Legend
+                  wrapperStyle={{ fontSize: '12px', color: '#04225c' }}
+                  formatter={(value) =>
+                    value === 'medianCovers'
+                      ? isKo ? '중앙 예상 (Median)' : 'Expected (median)'
+                      : isKo ? '추가 안전 버퍼 (upper − median)' : 'Possible extra (upper bound)'
+                  }
                 />
                 {/* Stacked Cleanly: medianCovers + upperDelta = upperTotal */}
-                <Bar dataKey="medianCovers" stackId="covers" fill="#078B79" radius={[0, 0, 0, 0]} isAnimationActive={false} />
-                <Bar dataKey="upperDelta" stackId="covers" fill="#99D5CE" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                <Bar dataKey="medianCovers" stackId="covers" fill="#04225c" radius={[0, 0, 0, 0]} isAnimationActive={false} />
+                <Bar dataKey="upperDelta" stackId="covers" fill="url(#ss-hatch)" stroke="#0d67f7" strokeWidth={1} radius={[0, 0, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Detailed Forecast & Model Selection Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="font-bold text-gray-800 text-sm">
-            {isKo ? '메뉴별 예측 및 백테스트 성과표' : 'Menu Forecast & Backtest Performance'}
-          </h3>
-          <span className="text-xs text-gray-500">
-            FVA (Forecast Value Added) = (Baseline WAPE - Model WAPE) / Baseline
+      <section className="ss-section">
+        <div className="ss-section-title justify-between flex-wrap">
+          <span>{isKo ? '메뉴별 예측 및 백테스트 성과표' : 'Menu forecast & backtest performance'}</span>
+          <span className="ss-meta font-normal">
+            FVA = (Baseline WAPE − Model WAPE) / Baseline WAPE
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-gray-50 text-gray-600 uppercase border-b border-gray-200">
+        <div className="ss-table-wrap">
+          <table className="ss-table">
+            <thead>
               <tr>
-                <th className="px-4 py-3">{isKo ? '날짜' : 'Date'}</th>
-                <th className="px-4 py-3">{isKo ? '메뉴' : 'Menu Item'}</th>
-                <th className="px-4 py-3">{isKo ? '시간대' : 'Daypart'}</th>
-                <th className="px-4 py-3 text-right">{isKo ? '중앙 예상' : 'Median'}</th>
-                <th className="px-4 py-3 text-right">{isKo ? '상한선' : 'Upper (P90)'}</th>
-                <th className="px-4 py-3 text-right">{isKo ? '예상 매출' : 'Revenue'}</th>
-                <th className="px-4 py-3">{isKo ? '채택 모델' : 'Selected Model'}</th>
-                <th className="px-4 py-3 text-right">{isKo ? '모델 WAPE' : 'Model WAPE'}</th>
-                <th className="px-4 py-3 text-right">{isKo ? '기준 WAPE' : 'Base WAPE'}</th>
-                <th className="px-4 py-3 text-right">FVA</th>
+                <th>{isKo ? '날짜' : 'Date'}</th>
+                <th>{isKo ? '메뉴' : 'Menu item'}</th>
+                <th>{isKo ? '시간대' : 'Daypart'}</th>
+                <th className="ss-num">{isKo ? '중앙 예상' : 'Median'}</th>
+                <th className="ss-num">{isKo ? '상한선 (P90)' : 'Upper (P90)'}</th>
+                <th className="ss-num">{isKo ? '예상 매출' : 'Revenue'}</th>
+                <th>{isKo ? '채택 모델' : 'Selected model'}</th>
+                <th className="ss-num">{isKo ? '모델 WAPE' : 'Model WAPE'}</th>
+                <th className="ss-num">{isKo ? '기준 WAPE' : 'Base WAPE'}</th>
+                <th className="ss-num">FVA</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 text-gray-700">
+            <tbody>
               {forecastData.slice(0, 30).map((row, idx) => (
-                <tr key={idx} className="hover:bg-gray-50 transition">
-                  <td className="px-4 py-2.5 font-medium whitespace-nowrap">
+                <tr key={idx}>
+                  <td className="whitespace-nowrap tabular-nums">
                     {row.target_date} ({row.day_name})
                   </td>
-                  <td className="px-4 py-2.5 font-semibold text-gray-900 whitespace-nowrap">
+                  <td className="font-bold whitespace-nowrap">
                     {isKo ? row.menu_name_ko : row.menu_name_en}
                   </td>
-                  <td className="px-4 py-2.5 capitalize">{row.daypart}</td>
-                  <td className="px-4 py-2.5 text-right font-bold text-teal-800">
-                    {row.median_portions}
-                  </td>
-                  <td className="px-4 py-2.5 text-right text-gray-500">
-                    {row.upper_portions}
-                  </td>
-                  <td className="px-4 py-2.5 text-right font-medium">
-                    ₩{row.projected_revenue_krw.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <span className={`px-2 py-0.5 rounded text-2xs font-bold uppercase ${
-                      row.selected_model === 'ml' 
-                        ? 'bg-teal-100 text-teal-800' 
-                        : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {row.selected_model}
+                  <td className="capitalize">{row.daypart}</td>
+                  <td className="ss-num font-bold">{row.median_portions}</td>
+                  <td className="ss-num ss-muted">{row.upper_portions}</td>
+                  <td className="ss-num">₩{row.projected_revenue_krw.toLocaleString()}</td>
+                  <td>
+                    <span className={`ss-chip ${row.selected_model === 'ml' ? 'ss-chip-info' : 'ss-chip-ok'}`}>
+                      {row.selected_model === 'ml' ? 'HistGBM' : row.selected_model}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 text-right font-mono">
-                    {(row.model_wape * 100).toFixed(1)}%
-                  </td>
-                  <td className="px-4 py-2.5 text-right font-mono text-gray-400">
-                    {(row.baseline_wape * 100).toFixed(1)}%
-                  </td>
-                  <td className={`px-4 py-2.5 text-right font-mono font-semibold ${row.fva >= 0 ? 'text-teal-700' : 'text-coral-600'}`}>
-                    {(row.fva * 100).toFixed(1)}%
-                  </td>
+                  <td className="ss-num">{(row.model_wape * 100).toFixed(1)}%</td>
+                  <td className="ss-num ss-muted">{(row.baseline_wape * 100).toFixed(1)}%</td>
+                  <td className="ss-num font-bold">{(row.fva * 100).toFixed(1)}%</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

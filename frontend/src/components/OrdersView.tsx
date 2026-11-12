@@ -133,113 +133,85 @@ export default function OrdersView() {
       case 'proposed':
         return {
           label: isKo ? '제안됨 (Proposed)' : 'Proposed',
-          cls: 'bg-amber-100 text-amber-800 border-amber-300',
+          cls: 'ss-chip-attention',
         };
       case 'approved':
         return {
           label: isKo ? '승인됨 (Approved)' : 'Approved',
-          cls: 'bg-teal-100 text-teal-800 border-teal-300',
+          cls: 'ss-chip-info',
         };
       case 'edited':
         return {
-          label: isKo ? '수량수정 승인 (Edited)' : 'Edited & Approved',
-          cls: 'bg-blue-100 text-blue-800 border-blue-300',
+          label: isKo ? '수량수정 승인 (Edited)' : 'Edited & approved',
+          cls: 'ss-chip-info',
         };
       case 'incoming':
         return {
           label: isKo ? '입고 대기 (Incoming)' : 'Incoming',
-          cls: 'bg-indigo-100 text-indigo-800 border-indigo-300',
+          cls: 'ss-chip-info',
         };
       case 'received':
         return {
           label: isKo ? '입고 완료 (Received)' : 'Received',
-          cls: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+          cls: 'ss-chip-ok',
         };
       case 'rejected':
         return {
           label: isKo ? '반려됨 (Rejected)' : 'Rejected',
-          cls: 'bg-red-100 text-red-800 border-red-300',
+          cls: 'ss-chip-critical',
         };
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header & Refresh */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            {isKo ? '발주 추천 및 라이프사이클 관리' : 'Order Recommendations & Lifecycle'}
-          </h2>
-          <p className="text-sm text-gray-500">
-            {isKo
-              ? 'FEFO 소비기한 위험 제외, 안전 버퍼, 포장 규격 올림을 반영한 발주 추천 (사장님 최종 승인 필수)'
-              : 'FEFO expiry-risk exclusion, safety buffer, and pack-size rounding with mandatory owner approval'}
-          </p>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          {autonomyLevel === 2 && proposedCount > 0 && (
-            <button
-              type="button"
-              onClick={handleApproveAll}
-              className="flex items-center space-x-1.5 px-4 py-2 bg-[#078B79] text-white rounded-lg text-xs font-bold hover:bg-teal-800 transition shadow-sm"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>
-                {isKo ? `제안 발주 원탭 일괄 승인 (${proposedCount}건)` : `One-Tap Approve All (${proposedCount})`}
-              </span>
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => fetchOrders(true)}
-            className="flex items-center space-x-1.5 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 transition"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>{isKo ? '추천 재계산' : 'Recalculate'}</span>
-          </button>
-        </div>
-      </div>
+    <div>
+      <h1 className="ss-page-title">
+        {isKo ? '발주 추천 및 라이프사이클 관리' : 'Order recommendations & lifecycle'}
+      </h1>
+      <p className="ss-page-desc">
+        {isKo
+          ? 'FEFO 소비기한 위험 제외, 안전 버퍼, 포장 규격 올림을 반영한 발주 추천입니다. 모든 발주는 사장님이 승인해야 확정됩니다.'
+          : 'FEFO expiry-risk exclusion, safety buffer, and pack-size rounding with mandatory owner approval.'}
+      </p>
 
       {/* Human-in-the-Loop Autonomy Level Selector (Level 1 & 2 selectable; Level 3 Disabled) */}
-      <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="text-sm font-bold text-gray-900">
-              {isKo ? '인간 중심(Human-in-the-Loop) 자율성 단계 설정' : 'Human-in-the-Loop Autonomy Level'}
-            </h3>
-            <p className="text-xs text-gray-500">
-              {isKo
-                ? '모든 발주는 사장님이 직접 승인해야 합니다. 3단계(완전 자동 발주)는 정책상 비활성화되어 있습니다.'
-                : 'Owner approves everything. Level 3 (Full auto-order) is permanently disabled by safety policy.'}
-            </p>
-          </div>
-          <div className="text-right">
-            <span className="text-xs font-semibold text-gray-600">
-              {isKo ? '활성 발주 합계:' : 'Total Active Spend:'}{' '}
-              <span className={`font-bold ${totalActiveSpendKrw > spendCapKrw ? 'text-red-600' : 'text-teal-800'}`}>
-                ₩{totalActiveSpendKrw.toLocaleString()}
-              </span>{' '}
-              / ₩{spendCapKrw.toLocaleString()}
-            </span>
-          </div>
+      <section className="ss-section">
+        <div className="ss-section-title justify-between flex-wrap">
+          <span>
+            {isKo ? '인간 중심(Human-in-the-Loop) 자율성 단계' : 'Human-in-the-loop autonomy level'}
+          </span>
+          <span className="text-sm font-normal tabular-nums">
+            {isKo ? '활성 발주 합계: ' : 'Total active spend: '}
+            <strong>₩{totalActiveSpendKrw.toLocaleString()}</strong> / ₩{spendCapKrw.toLocaleString()}
+            {totalActiveSpendKrw > spendCapKrw && (
+              <span className="ss-chip ss-chip-critical ml-2">
+                <AlertTriangle aria-hidden="true" />
+                {isKo ? '한도 초과' : 'Over cap'}
+              </span>
+            )}
+          </span>
         </div>
+
+        <p className="text-sm ss-muted mb-4">
+          {isKo
+            ? '모든 발주는 사장님이 직접 승인해야 합니다. 3단계(완전 자동 발주)는 정책상 비활성화되어 있습니다.'
+            : 'The owner approves every order. Level 3 (full auto-order) is permanently disabled.'}
+        </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
             type="button"
             onClick={() => handleAutonomyChange(1)}
-            className={`p-3 rounded-xl border text-left transition ${
+            className={`p-4 border text-left cursor-pointer ${
               autonomyLevel === 1
-                ? 'border-[#078B79] bg-teal-50/60 ring-1 ring-[#078B79]'
-                : 'border-gray-200 hover:bg-gray-50'
+                ? 'bg-ink text-paper border-ink'
+                : 'bg-paper text-ink border-ink/35 hover:bg-ink/5'
             }`}
           >
-            <p className="text-xs font-bold text-gray-900">
-              {isKo ? 'Level 1: 개별 검토 및 승인 (Suggest)' : 'Level 1: Suggest Only'}
+            <p className="text-sm font-bold">
+              {isKo ? 'Level 1: 개별 검토 및 승인 (Suggest)' : 'Level 1: Suggest only'}
             </p>
-            <p className="text-[11px] text-gray-500 mt-0.5">
+            <p className={`text-xs mt-1 ${autonomyLevel === 1 ? 'text-paper/80' : 'ss-muted'}`}>
               {isKo ? '품목별로 수량을 확인하고 개별 승인합니다.' : 'Review and approve each item individually.'}
             </p>
           </button>
@@ -247,16 +219,16 @@ export default function OrdersView() {
           <button
             type="button"
             onClick={() => handleAutonomyChange(2)}
-            className={`p-3 rounded-xl border text-left transition ${
+            className={`p-4 border text-left cursor-pointer ${
               autonomyLevel === 2
-                ? 'border-[#078B79] bg-teal-50/60 ring-1 ring-[#078B79]'
-                : 'border-gray-200 hover:bg-gray-50'
+                ? 'bg-ink text-paper border-ink'
+                : 'bg-paper text-ink border-ink/35 hover:bg-ink/5'
             }`}
           >
-            <p className="text-xs font-bold text-gray-900">
-              {isKo ? 'Level 2: 원탭 일괄 승인 (One-Tap Approve)' : 'Level 2: One-Tap Approve'}
+            <p className="text-sm font-bold">
+              {isKo ? 'Level 2: 원탭 일괄 승인 (One-tap approve)' : 'Level 2: One-tap approve'}
             </p>
-            <p className="text-[11px] text-gray-500 mt-0.5">
+            <p className={`text-xs mt-1 ${autonomyLevel === 2 ? 'text-paper/80' : 'ss-muted'}`}>
               {isKo ? '추천 발주서를 한 번의 탭으로 일괄 승인합니다.' : 'Approve all proposed orders with a single tap.'}
             </p>
           </button>
@@ -265,160 +237,190 @@ export default function OrdersView() {
             type="button"
             disabled
             aria-disabled="true"
-            className="p-3 rounded-xl border border-gray-200 bg-gray-100 text-gray-400 text-left cursor-not-allowed opacity-75"
+            className="p-4 border border-dashed border-ink/35 bg-paper text-ink/35 text-left cursor-not-allowed"
           >
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold text-gray-500">
-                {isKo ? 'Level 3: 완전 자동 발주 (비활성화)' : 'Level 3: Full Auto-Order (Disabled)'}
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-bold">
+                {isKo ? 'Level 3: 완전 자동 발주 (비활성화)' : 'Level 3: Full auto-order (disabled)'}
               </p>
-              <Lock className="w-3.5 h-3.5 text-gray-400" />
+              <Lock className="w-4 h-4 shrink-0" aria-hidden="true" />
             </div>
-            <p className="text-[11px] text-gray-400 mt-0.5">
+            <p className="text-xs mt-1">
               {isKo ? '안전 정책상 무인 자동 발주는 금지됩니다.' : 'Disabled: owner approval is always required.'}
             </p>
           </button>
         </div>
-      </div>
+      </section>
 
-      {/* Lifecycle Status Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="bg-gray-100 p-1 rounded-lg flex flex-wrap gap-1 text-xs font-medium">
-          {(['all', 'proposed', 'approved', 'edited', 'incoming', 'received', 'rejected'] as const).map(st => (
+      {/* Filter & Actions Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="inline-flex flex-wrap border border-ink">
+          {(['all', 'proposed', 'approved', 'edited', 'incoming', 'received', 'rejected'] as const).map(st => {
+            const active = statusFilter === st;
+            return (
+              <button
+                key={st}
+                type="button"
+                onClick={() => setStatusFilter(st)}
+                className={`px-3 py-2 text-xs font-bold cursor-pointer ${
+                  active ? 'bg-ink text-paper' : 'bg-paper text-ink hover:bg-ink/5'
+                }`}
+              >
+                {st === 'all' ? (isKo ? '전체' : 'All') : statusBadge(st).label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {autonomyLevel === 2 && proposedCount > 0 && (
             <button
-              key={st}
               type="button"
-              onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1 rounded-md transition ${
-                statusFilter === st ? 'bg-white shadow text-teal-800 font-semibold' : 'text-gray-600'
-              }`}
+              onClick={handleApproveAll}
+              className="ss-btn ss-btn-primary ss-btn-sm"
             >
-              {st === 'all' ? (isKo ? '전체' : 'All') : statusBadge(st).label}
+              <ShieldCheck className="w-4 h-4" aria-hidden="true" />
+              <span>
+                {isKo ? `제안 발주 일괄 승인 (${proposedCount}건)` : `Approve all proposed (${proposedCount})`}
+              </span>
             </button>
-          ))}
+          )}
+          <button
+            type="button"
+            onClick={() => fetchOrders(true)}
+            className="ss-btn ss-btn-secondary ss-btn-sm"
+          >
+            <RefreshCw className="w-4 h-4" aria-hidden="true" />
+            <span>{isKo ? '추천 재계산' : 'Recalculate'}</span>
+          </button>
         </div>
       </div>
 
-      {/* Order Recommendation Cards */}
+      {/* Order Recommendation List */}
       {loading ? (
-        <div className="p-8 bg-white rounded-xl border border-gray-200 text-center text-sm text-gray-400">
+        <div className="p-8 border border-ink/15 text-center text-sm ss-muted">
           {isKo ? '발주 추천 데이터 계산 중...' : 'Computing order recommendations...'}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {filteredOrders.map(order => {
             const badge = statusBadge(order.status);
             const r = order.reason || {};
             const isPorkFixture = order.ingredient_code === 'ING-PORK';
 
             return (
-              <div
+              <section
                 key={order.id}
-                className={`bg-white p-5 rounded-xl border shadow-sm space-y-4 ${
-                  isPorkFixture ? 'border-teal-400 ring-1 ring-teal-200' : 'border-gray-200'
+                className={`border-t-2 border-ink pt-4 pb-6 space-y-4 ${
+                  isPorkFixture ? 'bg-signal/10 px-4' : ''
                 }`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-bold text-base text-gray-900">
+                      <h2 className="font-bold text-lg">
                         {isKo ? order.ingredient_name_ko : order.ingredient_name_en}
-                      </span>
-                      <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${badge.cls}`}>
+                      </h2>
+                      <span className={`ss-chip ${badge.cls}`}>
                         {badge.label}
                       </span>
                       {r.price_surge?.is_surge && (
-                        <span className="px-2 py-0.5 text-xs font-semibold rounded bg-red-100 text-red-800 border border-red-200 inline-flex items-center space-x-1">
-                          <TrendingUp className="w-3 h-3 mr-1" />
+                        <span className="ss-chip ss-chip-attention">
+                          <TrendingUp aria-hidden="true" />
                           <span>
                             {isKo
-                              ? `단가 급등 경고 (+${r.price_surge.surge_pct}% vs 4주 평균)`
-                              : `Price Surge (+${r.price_surge.surge_pct}% vs 4w avg)`}
+                              ? `단가 급등 (+${r.price_surge.surge_pct}% vs 4주 평균)`
+                              : `Price surge (+${r.price_surge.surge_pct}% vs 4w avg)`}
                           </span>
                         </span>
                       )}
                       {r.at_risk_qty && r.at_risk_qty > 0 ? (
-                        <span className="px-2 py-0.5 text-xs font-semibold rounded bg-amber-100 text-amber-900 border border-amber-300 inline-flex items-center space-x-1">
-                          <AlertTriangle className="w-3 h-3 mr-1" />
+                        <span className="ss-chip ss-chip-critical">
+                          <AlertTriangle aria-hidden="true" />
                           <span>
                             {isKo
-                              ? `소비기한 만료위험 제외: ${r.at_risk_qty}${order.unit}`
-                              : `Excluded At-Risk Stock: ${r.at_risk_qty} ${order.unit}`}
+                              ? `소비기한 만료위험 제외: ${r.at_risk_qty} ${order.unit}`
+                              : `At-risk stock excluded: ${r.at_risk_qty} ${order.unit}`}
                           </span>
                         </span>
                       ) : null}
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {isKo ? order.supplier_name_ko : order.supplier_name_en} ·{' '}
-                      {isKo ? `마감 ${order.cutoff_time}` : `Cutoff ${order.cutoff_time}`} ·{' '}
+                    <p className="ss-meta mt-1">
+                      {isKo ? order.supplier_name_ko : order.supplier_name_en}
+                      {' — '}
+                      {isKo ? `마감 ${order.cutoff_time}` : `Cutoff ${order.cutoff_time}`}
+                      {', '}
                       {isKo ? `예상 입고일 ${order.expected_delivery_date}` : `ETA ${order.expected_delivery_date}`}
                     </p>
                   </div>
 
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-teal-800">
+                  <div className="text-right tabular-nums">
+                    <p className="text-xl font-bold">
                       {order.effective_qty} {order.unit}{' '}
-                      <span className="text-xs font-normal text-gray-500">
-                        ({order.packs_count} {isKo ? '박스/팩' : 'packs'} × {order.pack_size}{order.unit})
+                      <span className="text-xs font-normal ss-muted">
+                        ({order.packs_count} {isKo ? '팩' : 'packs'} × {order.pack_size} {order.unit})
                       </span>
                     </p>
-                    <p className="text-xs font-semibold text-gray-700">
+                    <p className="text-sm font-bold ss-muted">
                       ₩{order.total_cost_krw.toLocaleString()} (₩{order.unit_cost_krw.toLocaleString()}/{order.unit})
                     </p>
                   </div>
                 </div>
 
                 {/* Formula Breakdown Strip */}
-                <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 bg-gray-50 p-3 rounded-lg border border-gray-200 text-xs">
-                  <div>
-                    <span className="text-gray-500 block">{isKo ? '예상 수요량' : 'Projected Demand'}</span>
-                    <span className="font-mono font-bold text-gray-900">{r.demand_qty} {order.unit}</span>
+                <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-xs">
+                  <div className="ss-tile p-3">
+                    <span className="ss-meta block">{isKo ? '예상 수요량' : 'Projected demand'}</span>
+                    <span className="font-bold text-base tabular-nums">{r.demand_qty} {order.unit}</span>
                   </div>
-                  <div>
-                    <span className="text-gray-500 block">{isKo ? '+ 안전 버퍼(10%)' : '+ Safety Buffer'}</span>
-                    <span className="font-mono font-bold text-gray-900">+{r.buffer_qty} {order.unit}</span>
+                  <div className="ss-tile p-3">
+                    <span className="ss-meta block">{isKo ? '안전 버퍼 (10%)' : 'Safety buffer'}</span>
+                    <span className="font-bold text-base tabular-nums">+{r.buffer_qty} {order.unit}</span>
                   </div>
-                  <div>
-                    <span className="text-gray-500 block">{isKo ? '- 가용 재고(FEFO)' : '- Usable Stock'}</span>
-                    <span className="font-mono font-bold text-teal-800">-{r.usable_qty} {order.unit}</span>
+                  <div className="ss-tile p-3">
+                    <span className="ss-meta block">{isKo ? '가용 재고 (FEFO)' : 'Usable stock'}</span>
+                    <span className="font-bold text-base tabular-nums">−{r.usable_qty} {order.unit}</span>
                   </div>
-                  <div>
-                    <span className="text-gray-500 block">{isKo ? '만료위험 제외(소비기한)' : 'At-Risk Excluded'}</span>
-                    <span className="font-mono font-bold text-red-600">{r.at_risk_qty || 0} {order.unit}</span>
+                  <div className={`ss-tile p-3 ${(r.at_risk_qty || 0) > 0 ? 'ss-tile-critical' : ''}`}>
+                    <span className={`block text-xs ${(r.at_risk_qty || 0) > 0 ? 'text-paper/80' : 'ss-meta'}`}>
+                      {isKo ? '만료위험 제외 (소비기한)' : 'At-risk excluded'}
+                    </span>
+                    <span className="font-bold text-base tabular-nums">{r.at_risk_qty || 0} {order.unit}</span>
                   </div>
-                  <div>
-                    <span className="text-gray-500 block">{isKo ? '= 순 필요량' : '= Net Need'}</span>
-                    <span className="font-mono font-bold text-gray-900">{r.net_need_qty} {order.unit}</span>
+                  <div className="ss-tile p-3">
+                    <span className="ss-meta block">{isKo ? '순 필요량' : 'Net need'}</span>
+                    <span className="font-bold text-base tabular-nums">{r.net_need_qty} {order.unit}</span>
                   </div>
-                  <div>
-                    <span className="text-gray-500 block">{isKo ? '→ 포장규격 발주량' : '→ Order (Rounded)'}</span>
-                    <span className="font-mono font-bold text-teal-800">{order.recommended_qty} {order.unit}</span>
+                  <div className="ss-tile p-3">
+                    <span className="ss-meta block">{isKo ? '포장규격 발주량' : 'Order quantity'}</span>
+                    <span className="font-bold text-base tabular-nums">{order.recommended_qty} {order.unit}</span>
                   </div>
                 </div>
 
                 {/* Inline Quantity Editor if Active */}
                 {editingOrderId === order.id && (
-                  <div className="flex flex-wrap items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <span className="text-xs font-semibold text-blue-900">
-                      {isKo ? `수정 발주 수량 (${order.unit}):` : `Edited Order Qty (${order.unit}):`}
-                    </span>
+                  <div className="ss-note ss-note-attention items-center flex-wrap">
+                    <label className="text-sm font-bold">
+                      {isKo ? `수정 발주 수량 (${order.unit}):` : `Edited order quantity (${order.unit}):`}
+                    </label>
                     <input
                       type="number"
                       step={order.pack_size}
                       value={editQtyValue}
                       onChange={e => setEditQtyValue(Number(e.target.value))}
-                      className="w-28 px-3 py-1 bg-white border border-blue-300 rounded text-xs font-bold"
+                      className="ss-input w-28 tabular-nums font-bold"
                     />
                     <button
                       type="button"
                       onClick={() => handleTransition(order.id, 'edited', editQtyValue, 'Owner modified quantity')}
-                      className="px-3 py-1 bg-blue-700 text-white rounded text-xs font-semibold hover:bg-blue-800"
+                      className="ss-btn ss-btn-primary ss-btn-sm"
                     >
-                      {isKo ? '수정 수량으로 승인' : 'Save & Approve Edited'}
+                      {isKo ? '수정 수량으로 승인' : 'Save & approve order'}
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingOrderId(null)}
-                      className="px-2.5 py-1 bg-white border border-gray-300 text-gray-600 rounded text-xs"
+                      className="ss-btn ss-btn-secondary ss-btn-sm"
                     >
                       {isKo ? '취소' : 'Cancel'}
                     </button>
@@ -426,16 +428,16 @@ export default function OrdersView() {
                 )}
 
                 {/* Lifecycle Action Buttons */}
-                <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+                <div className="flex flex-wrap items-center justify-end gap-2">
                   {order.status === 'proposed' && (
                     <>
                       <button
                         type="button"
                         onClick={() => handleTransition(order.id, 'approved', order.recommended_qty)}
-                        className="flex items-center space-x-1 px-3.5 py-1.5 bg-[#078B79] text-white rounded-lg text-xs font-semibold hover:bg-teal-800 transition"
+                        className="ss-btn ss-btn-primary ss-btn-sm"
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>{isKo ? '승인 (Approve)' : 'Approve'}</span>
+                        <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                        <span>{isKo ? '발주 승인' : 'Approve order'}</span>
                       </button>
                       <button
                         type="button"
@@ -443,18 +445,18 @@ export default function OrdersView() {
                           setEditingOrderId(order.id);
                           setEditQtyValue(order.effective_qty);
                         }}
-                        className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 transition"
+                        className="ss-btn ss-btn-secondary ss-btn-sm"
                       >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>{isKo ? '수량 변경 (Edit)' : 'Edit Qty'}</span>
+                        <Edit3 className="w-4 h-4" aria-hidden="true" />
+                        <span>{isKo ? '수량 수정' : 'Edit quantity'}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleTransition(order.id, 'rejected', undefined, 'Rejected by owner')}
-                        className="flex items-center space-x-1 px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-semibold hover:bg-red-100 transition"
+                        className="ss-btn ss-btn-secondary ss-btn-sm"
                       >
-                        <XCircle className="w-3.5 h-3.5" />
-                        <span>{isKo ? '반려 (Reject)' : 'Reject'}</span>
+                        <XCircle className="w-4 h-4" aria-hidden="true" />
+                        <span>{isKo ? '발주 반려' : 'Reject order'}</span>
                       </button>
                     </>
                   )}
@@ -464,10 +466,10 @@ export default function OrdersView() {
                       <button
                         type="button"
                         onClick={() => handleTransition(order.id, 'incoming')}
-                        className="flex items-center space-x-1 px-3.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition"
+                        className="ss-btn ss-btn-primary ss-btn-sm"
                       >
-                        <Send className="w-3.5 h-3.5" />
-                        <span>{isKo ? '발주서 전송 → 입고대기 (Incoming)' : 'Dispatch → Mark Incoming'}</span>
+                        <Send className="w-4 h-4" aria-hidden="true" />
+                        <span>{isKo ? '발주서 전송 (입고 대기)' : 'Send order (mark incoming)'}</span>
                       </button>
                       <button
                         type="button"
@@ -475,18 +477,18 @@ export default function OrdersView() {
                           setEditingOrderId(order.id);
                           setEditQtyValue(order.effective_qty);
                         }}
-                        className="flex items-center space-x-1 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 transition"
+                        className="ss-btn ss-btn-secondary ss-btn-sm"
                       >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>{isKo ? '수량 재수정' : 'Edit Qty'}</span>
+                        <Edit3 className="w-4 h-4" aria-hidden="true" />
+                        <span>{isKo ? '수량 재수정' : 'Edit quantity'}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleTransition(order.id, 'rejected')}
-                        className="flex items-center space-x-1 px-3 py-1.5 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-semibold hover:bg-red-100 transition"
+                        className="ss-btn ss-btn-secondary ss-btn-sm"
                       >
-                        <XCircle className="w-3.5 h-3.5" />
-                        <span>{isKo ? '반려' : 'Reject'}</span>
+                        <XCircle className="w-4 h-4" aria-hidden="true" />
+                        <span>{isKo ? '반려' : 'Reject order'}</span>
                       </button>
                     </>
                   )}
@@ -495,10 +497,10 @@ export default function OrdersView() {
                     <button
                       type="button"
                       onClick={() => handleTransition(order.id, 'received', order.effective_qty)}
-                      className="flex items-center space-x-1 px-4 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 transition"
+                      className="ss-btn ss-btn-primary ss-btn-sm"
                     >
-                      <PackageCheck className="w-3.5 h-3.5" />
-                      <span>{isKo ? '입고 완료 확정 (로트 자동 생성)' : 'Confirm Received (Create Lot)'}</span>
+                      <PackageCheck className="w-4 h-4" aria-hidden="true" />
+                      <span>{isKo ? '입고 완료 확정 (로트 생성)' : 'Confirm received (create lot)'}</span>
                     </button>
                   )}
 
@@ -506,13 +508,13 @@ export default function OrdersView() {
                     <button
                       type="button"
                       onClick={() => handleTransition(order.id, 'proposed')}
-                      className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-200 transition"
+                      className="ss-btn ss-btn-secondary ss-btn-sm"
                     >
-                      {isKo ? '제안 상태로 복원' : 'Restore to Proposed'}
+                      {isKo ? '제안 상태로 복원' : 'Restore to proposed'}
                     </button>
                   )}
                 </div>
-              </div>
+              </section>
             );
           })}
         </div>

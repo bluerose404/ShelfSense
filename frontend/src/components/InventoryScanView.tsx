@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import {
   QrCode, Camera, CameraOff, CheckCircle2, AlertTriangle,
-  PlusCircle, PackageCheck, Search, Upload, Sparkles, Box, ShieldAlert
+  PlusCircle, PackageCheck, Search, Upload, Box, ShieldAlert
 } from 'lucide-react';
 
 export interface LotItem {
@@ -300,11 +300,11 @@ export default function InventoryScanView() {
         }
       );
       controlsRef.current = controls;
-    } catch (err: any) {
+    } catch {
       setCameraError(
         isKo
           ? '카메라 장치를 찾을 수 없거나 권한이 거부되었습니다. 아래 데모 바코드 프리셋 또는 수동 입력을 사용해 주세요.'
-          : 'Camera device not found or permission denied. Please use the demo barcode presets or manual input below.'
+          : 'Camera not found or permission denied. Use the demo barcode presets or manual input below.'
       );
       setCameraActive(false);
     }
@@ -341,7 +341,6 @@ export default function InventoryScanView() {
           setReceiveBatch(data.extracted_batch || `BATCH-${data.barcode.slice(-4)}`);
           setMatchedOrderId(data.incoming_order ? data.incoming_order.id : null);
 
-          // If public API mock, also pre-fill registration form
           if (data.product.source === 'public_api') {
             setRegNameKo(data.product.name_ko);
             setRegNameEn(data.product.name_en);
@@ -355,7 +354,6 @@ export default function InventoryScanView() {
             }
           }
         } else {
-          // Unknown barcode -> prepare one-time registration defaults
           setRegNameKo('');
           setRegNameEn('');
           setRegMaker('');
@@ -437,7 +435,7 @@ export default function InventoryScanView() {
       .then(data => {
         setReceiveSuccessMsg(
           isKo
-            ? `입고 완료 (Lot #${data.lot_id}): ${lookupResult.product?.name_ko} ${receiveQty}${lookupResult.product?.unit} (소비기한: ${receiveExpiry})`
+            ? `입고 완료 (Lot #${data.lot_id}): ${lookupResult.product?.name_ko} ${receiveQty} ${lookupResult.product?.unit} (소비기한: ${receiveExpiry})`
             : `Lot #${data.lot_id} received: ${lookupResult.product?.name_en} ${receiveQty} ${lookupResult.product?.unit} (소비기한: ${receiveExpiry})`
         );
         if (data.discrepancy) {
@@ -497,8 +495,8 @@ export default function InventoryScanView() {
       .then(data => {
         setSpotResultMsg(
           isKo
-            ? `현장 실사 반영 완료 (${data.name_ko}): 장부 ${data.system_qty}${data.unit} → 실사 ${data.counted_qty}${data.unit} (차이 ${data.variance_qty > 0 ? '+' : ''}${data.variance_qty}${data.unit}, ₩${data.variance_krw.toLocaleString()})`
-            : `Spot count applied (${data.name_en}): System ${data.system_qty} ${data.unit} → Counted ${data.counted_qty} ${data.unit} (Variance ${data.variance_qty > 0 ? '+' : ''}${data.variance_qty} ${data.unit}, ₩${data.variance_krw.toLocaleString()})`
+            ? `현장 실사 반영 완료 (${data.name_ko}): 장부 ${data.system_qty} ${data.unit} → 실사 ${data.counted_qty} ${data.unit} (차이 ${data.variance_qty > 0 ? '+' : ''}${data.variance_qty} ${data.unit}, ₩${data.variance_krw.toLocaleString()})`
+            : `Spot count saved (${data.name_en}): System ${data.system_qty} ${data.unit} → Counted ${data.counted_qty} ${data.unit} (Variance ${data.variance_qty > 0 ? '+' : ''}${data.variance_qty} ${data.unit}, ₩${data.variance_krw.toLocaleString()})`
         );
         fetchAllInventoryData();
       })
@@ -540,128 +538,121 @@ export default function InventoryScanView() {
   const totalStockValueKrw = lots.reduce((sum, l) => sum + l.quantity * l.unit_cost_krw, 0);
 
   return (
-    <div className="space-y-6">
-      {/* Header & Demo Incoming Order Trigger */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            {isKo ? '재고 로트(FEFO) & 바코드 입고 스캔' : 'Inventory Lots (FEFO) & Barcode Scan Receiving'}
-          </h2>
-          <p className="text-sm text-gray-500">
-            {isKo
-              ? 'EAN-13 및 GS1 2D(QR/DataMatrix) 바코드 인식, 3단계 상품 조회(내부 DB → 공공 API → 1회 등록), 발주 대비 입고 검수'
-              : 'EAN-13 & GS1 2D scan, 3-tier product lookup (Internal -> Public API -> 1-time registration), and order receiving match'}
-          </p>
+    <div>
+      <h1 className="ss-page-title">
+        {isKo ? '재고 로트(FEFO) & 바코드 입고 스캔' : 'Stock lots (FEFO) & barcode scan receiving'}
+      </h1>
+      <p className="ss-page-desc">
+        {isKo
+          ? 'EAN-13 및 GS1 2D(QR/DataMatrix) 바코드 인식, 3단계 상품 조회(내부 DB → 공공 API → 1회 등록), 발주 대비 입고 검수입니다.'
+          : 'EAN-13 and GS1 2D barcode scanning, 3-tier product lookup (internal DB, public API, one-time registration), and incoming order matching.'}
+      </p>
+
+      {/* Shelf-Label KPI Tiles */}
+      <section className="ss-section">
+        <div className="ss-section-title justify-between flex-wrap">
+          <span>{isKo ? '재고 현황 요약' : 'Inventory overview'}</span>
+          <button
+            type="button"
+            onClick={handleCreateDemoIncomingOrders}
+            className="ss-btn ss-btn-secondary ss-btn-sm"
+          >
+            <span>
+              {isKo
+                ? `데모 입고예정 발주 불러오기 (${incomingOrders.length}건 대기)`
+                : `Load demo incoming orders (${incomingOrders.length} active)`}
+            </span>
+          </button>
         </div>
 
-        <button
-          onClick={handleCreateDemoIncomingOrders}
-          className="flex items-center space-x-2 px-3.5 py-2 bg-teal-50 border border-teal-300 text-teal-900 rounded-lg text-xs font-semibold hover:bg-teal-100 transition shadow-sm"
-        >
-          <Sparkles className="w-4 h-4 text-teal-700" />
-          <span>
-            {isKo
-              ? `데모 입고예정 발주 준비 (${incomingOrders.length}건 대기)`
-              : `Load Demo Incoming Orders (${incomingOrders.length} active)`}
-          </span>
-        </button>
-      </div>
-
-      {/* KPI Summary Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <p className="text-xs text-gray-500">{isKo ? '활성 재고 로트 수' : 'Active Inventory Lots'}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{lots.length}</p>
-          <p className="text-xs text-teal-700 mt-1">{isKo ? '소비기한 임박순(FEFO) 정렬' : 'Sorted by FEFO (소비기한)'}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="ss-tile">
+            <div className="ss-figure">{lots.length}</div>
+            <div className="ss-figure-label">{isKo ? '활성 재고 로트 수' : 'Active inventory lots'}</div>
+            <p className="ss-meta mt-2">{isKo ? '소비기한 임박순(FEFO) 정렬' : 'Sorted by FEFO (소비기한)'}</p>
+          </div>
+          <div className="ss-tile ss-tile-critical">
+            <div className="ss-figure">{urgentCount}</div>
+            <div className="ss-figure-label">{isKo ? '소비기한 긴급 (2일 이내)' : 'Urgent 소비기한 (≤2 days)'}</div>
+            <p className="text-xs text-paper/80 mt-2 tabular-nums">
+              {isKo ? `주의(3~5일): ${warningCount}건` : `Warning (3–5d): ${warningCount} lots`}
+            </p>
+          </div>
+          <div className="ss-tile">
+            <div className="ss-figure">₩{Math.round(totalStockValueKrw).toLocaleString()}</div>
+            <div className="ss-figure-label">{isKo ? '총 가용 재고 자산가치' : 'Total active stock value'}</div>
+            <p className="ss-meta mt-2">{isKo ? '18개 핵심 식자재 기준' : 'Across 18 core ingredients'}</p>
+          </div>
+          <div className="ss-tile">
+            <div className="ss-figure">{incomingOrders.length}</div>
+            <div className="ss-figure-label">{isKo ? '입고 매칭 대기 발주' : 'Incoming orders to match'}</div>
+            <p className="ss-meta mt-2">{isKo ? '스캔 시 수량 차이 자동 검수' : 'Checks quantity discrepancy on scan'}</p>
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-red-200 shadow-sm">
-          <p className="text-xs text-red-700 font-medium">{isKo ? '소비기한 긴급 (D-2 이내)' : 'Urgent 소비기한 (≤ 2 Days)'}</p>
-          <p className="text-2xl font-bold text-red-600 mt-1">{urgentCount}</p>
-          <p className="text-xs text-gray-500 mt-1">
-            {isKo ? `주의(D-5 이내): ${warningCount}건` : `Warning (3–5d): ${warningCount} lots`}
-          </p>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <p className="text-xs text-gray-500">{isKo ? '총 가용 재고 자산가치' : 'Total Active Stock Value'}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">₩{Math.round(totalStockValueKrw).toLocaleString()}</p>
-          <p className="text-xs text-gray-500 mt-1">{isKo ? '18개 핵심 식자재 기준' : 'Across 18 core ingredients'}</p>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <p className="text-xs text-gray-500">{isKo ? '입고 매칭 대기 발주' : 'Incoming Orders to Match'}</p>
-          <p className="text-2xl font-bold text-teal-800 mt-1">{incomingOrders.length}</p>
-          <p className="text-xs text-gray-500 mt-1">
-            {isKo ? '스캔 시 수량 차이 자동 검수' : 'Auto-checks quantity discrepancy'}
-          </p>
-        </div>
-      </div>
+      </section>
 
       {/* Barcode / GS1 2D Scanner & Lookup Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left: Scanner Input + Demo Presets */}
-        <div className="lg:col-span-5 bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-gray-800 text-sm flex items-center space-x-2">
-              <QrCode className="w-4 h-4 text-teal-700" />
-              <span>{isKo ? '바코드 / GS1 2D 스캐너' : 'Barcode / GS1 2D Scanner'}</span>
-            </h3>
+        <section className="lg:col-span-5 ss-section space-y-4">
+          <div className="ss-section-title justify-between">
+            <span className="inline-flex items-center gap-2">
+              <QrCode className="w-5 h-5" aria-hidden="true" />
+              <span>{isKo ? '바코드 / GS1 2D 스캐너' : 'Barcode / GS1 2D scanner'}</span>
+            </span>
             <button
               type="button"
               onClick={cameraActive ? stopCameraScan : startCameraScan}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                cameraActive
-                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className="ss-btn ss-btn-secondary ss-btn-sm"
             >
-              {cameraActive ? <CameraOff className="w-3.5 h-3.5" /> : <Camera className="w-3.5 h-3.5" />}
-              <span>{cameraActive ? (isKo ? '카메라 중지' : 'Stop Camera') : (isKo ? '카메라 스캔' : 'Camera Scan')}</span>
+              {cameraActive ? <CameraOff className="w-4 h-4" /> : <Camera className="w-4 h-4" />}
+              <span>{cameraActive ? (isKo ? '카메라 중지' : 'Stop camera') : (isKo ? '카메라 스캔' : 'Camera scan')}</span>
             </button>
           </div>
 
           {cameraActive && (
-            <div className="rounded-lg overflow-hidden bg-black aspect-video relative">
+            <div className="border-2 border-ink bg-ink aspect-video relative">
               <video ref={videoRef} className="w-full h-full object-cover" />
             </div>
           )}
 
           {cameraError && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-              {cameraError}
+            <div className="ss-note ss-note-attention">
+              <AlertTriangle className="w-4 h-4 text-signal" aria-hidden="true" />
+              <span>{cameraError}</span>
             </div>
           )}
 
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold text-gray-700">
-              {isKo ? '바코드 (EAN-13) 또는 GS1 2D 페이로드 입력' : 'EAN-13 Barcode or GS1 2D Payload'}
+          <div>
+            <label className="ss-label">
+              {isKo ? '바코드 (EAN-13) 또는 GS1 2D 페이로드' : 'EAN-13 barcode or GS1 2D payload'}
             </label>
-            <div className="flex space-x-2">
+            <div className="flex gap-2">
               <input
                 type="text"
                 value={barcodeInput}
                 onChange={e => setBarcodeInput(e.target.value)}
                 placeholder="(01)08801234000017(17)261120(10)LOT-01"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-teal-600"
+                className="ss-input flex-1 tabular-nums"
               />
               <button
                 type="button"
                 onClick={() => handleLookup()}
-                className="px-4 py-2 bg-[#078B79] text-white rounded-lg text-xs font-semibold hover:bg-teal-800 transition shrink-0"
+                className="ss-btn ss-btn-primary shrink-0"
               >
-                {isKo ? '조회' : 'Lookup'}
+                {isKo ? '바코드 조회' : 'Scan barcode'}
               </button>
             </div>
           </div>
 
           {/* Demo Presets (3 GS1 2D, Internal/Public API, 2 Unknown) */}
-          <div className="space-y-3 pt-2 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-600">
-              {isKo ? '원클릭 데모 스캔 프리셋 (클릭 시 즉시 조회)' : 'One-Tap Demo Scan Presets'}
+          <div className="space-y-3 pt-2 border-t border-ink/15">
+            <p className="text-xs font-bold">
+              {isKo ? '원클릭 데모 스캔 프리셋 (클릭 시 즉시 조회)' : 'One-tap demo scan presets'}
             </p>
             {DEMO_SCAN_PRESETS.map(group => (
               <div key={group.category} className="space-y-1.5">
-                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                  {group.category}
-                </p>
+                <p className="ss-meta font-bold">{group.category}</p>
                 <div className="grid grid-cols-1 gap-1.5">
                   {group.items.map(item => (
                     <button
@@ -671,12 +662,12 @@ export default function InventoryScanView() {
                         setBarcodeInput(item.payload);
                         handleLookup(item.payload);
                       }}
-                      className="text-left px-3 py-2 rounded-lg border border-gray-200 hover:border-teal-500 hover:bg-teal-50/50 transition flex items-center justify-between group"
+                      className="text-left px-3 py-2 border border-ink/35 hover:bg-ink/5 flex items-center justify-between gap-2 cursor-pointer"
                     >
-                      <span className="text-xs font-medium text-gray-800 group-hover:text-teal-900">
+                      <span className="text-xs font-bold">
                         {isKo ? item.label_ko : item.label_en}
                       </span>
-                      <span className="text-[10px] font-mono text-gray-400 ml-2 truncate max-w-[150px]">
+                      <span className="ss-meta tabular-nums truncate max-w-[150px]">
                         {item.payload}
                       </span>
                     </button>
@@ -685,65 +676,72 @@ export default function InventoryScanView() {
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
         {/* Right: Lookup Result -> Registration Form OR Receiving Form */}
-        <div className="lg:col-span-7 bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
+        <section className="lg:col-span-7 ss-section">
+          <h2 className="ss-section-title">
+            {isKo ? '상품 판별 및 로트 입고 검수' : 'Product lookup & lot receiving'}
+          </h2>
+
           {!lookupResult ? (
-            <div className="h-full min-h-[280px] flex flex-col items-center justify-center text-center text-gray-400 space-y-2">
-              <Box className="w-10 h-10 text-gray-300" />
-              <p className="text-sm font-medium text-gray-600">
+            <div className="p-8 border border-ink/15 text-center space-y-2">
+              <Box className="w-8 h-8 mx-auto opacity-50" aria-hidden="true" />
+              <p className="text-sm font-bold">
                 {isKo
                   ? '왼쪽에서 바코드를 조회하거나 데모 프리셋을 선택해 주세요.'
                   : 'Scan a barcode or select a demo preset on the left to inspect and receive stock.'}
               </p>
-              <p className="text-xs text-gray-400 max-w-md">
+              <p className="text-xs ss-muted max-w-md mx-auto">
                 {isKo
                   ? 'GS1 2D 코드는 소비기한과 배치번호를 자동 추출하며, 미등록 바코드는 최초 1회 상품 등록 후 즉시 입고됩니다.'
-                  : 'GS1 2D payloads auto-extract 소비기한 (Use-by Date) and batch number; unknown barcodes trigger one-time registration.'}
+                  : 'GS1 2D payloads extract 소비기한 (use-by date) and batch number; unknown barcodes trigger one-time registration.'}
               </p>
             </div>
           ) : (
             <div className="space-y-4">
               {/* Lookup Header & Badges */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-gray-200">
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-mono text-xs font-bold text-gray-800 bg-gray-100 px-2 py-0.5 rounded">
-                      {lookupResult.barcode}
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-ink/15">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="ss-chip ss-chip-ok tabular-nums">
+                    {lookupResult.barcode}
+                  </span>
+                  {lookupResult.is_gs1 && (
+                    <span className="ss-chip ss-chip-info">
+                      GS1 2D (AI 01/17/10)
                     </span>
-                    {lookupResult.is_gs1 && (
-                      <span className="px-2 py-0.5 text-[11px] font-semibold rounded bg-teal-100 text-teal-800">
-                        GS1 2D (AI 01/17/10)
-                      </span>
+                  )}
+                  <span className={`ss-chip ${lookupResult.ean13_valid ? 'ss-chip-ok' : 'ss-chip-critical'}`}>
+                    {lookupResult.ean13_valid ? (
+                      <>
+                        <CheckCircle2 aria-hidden="true" />
+                        <span>EAN-13 OK</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle aria-hidden="true" />
+                        <span>Invalid EAN-13</span>
+                      </>
                     )}
-                    <span
-                      className={`px-2 py-0.5 text-[11px] font-semibold rounded ${
-                        lookupResult.ean13_valid
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {lookupResult.ean13_valid ? 'EAN-13 Checksum OK' : 'Invalid EAN-13'}
-                    </span>
-                  </div>
+                  </span>
                 </div>
 
                 {/* Tier Badge */}
                 <div>
                   {lookupResult.product?.source === 'internal' && (
-                    <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-teal-50 text-teal-800 border border-teal-200">
-                      {isKo ? '1단계: 매장 등록 상품 (Internal DB)' : 'Tier 1: Internal DB Product'}
+                    <span className="ss-chip ss-chip-ok">
+                      {isKo ? '1단계: 매장 등록 상품 (Internal DB)' : 'Tier 1: Internal DB product'}
                     </span>
                   )}
                   {lookupResult.product?.source === 'public_api' && (
-                    <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-800 border border-blue-200">
-                      {isKo ? '2단계: 공공 식품 API 조회됨 (Public API)' : 'Tier 2: Public Food API Match'}
+                    <span className="ss-chip ss-chip-info">
+                      {isKo ? '2단계: 공공 식품 API 조회됨 (Public API)' : 'Tier 2: Public food API match'}
                     </span>
                   )}
                   {!lookupResult.product && (
-                    <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-50 text-amber-800 border border-amber-300">
-                      {isKo ? '3단계: 미등록 바코드 (최초 1회 등록 필요)' : 'Tier 3: Unknown Barcode (1-Time Registration)'}
+                    <span className="ss-chip ss-chip-attention">
+                      <AlertTriangle aria-hidden="true" />
+                      {isKo ? '3단계: 미등록 바코드 (1회 등록 필요)' : 'Tier 3: Unknown barcode (register once)'}
                     </span>
                   )}
                 </div>
@@ -751,24 +749,24 @@ export default function InventoryScanView() {
 
               {/* Case A: Unknown Barcode OR Unregistered Public API -> One-Time Registration Form */}
               {(!lookupResult.product || lookupResult.product.source === 'public_api') && (
-                <form onSubmit={handleRegisterProduct} className="bg-amber-50/70 border border-amber-200 rounded-xl p-4 space-y-3">
-                  <div className="flex items-center space-x-2 text-amber-900 font-bold text-sm">
-                    <PlusCircle className="w-4 h-4 text-amber-700" />
+                <form onSubmit={handleRegisterProduct} className="border border-ink p-4 space-y-4">
+                  <div className="flex items-center gap-2 font-bold text-sm">
+                    <PlusCircle className="w-4 h-4" aria-hidden="true" />
                     <span>
                       {lookupResult.product?.source === 'public_api'
                         ? isKo
-                          ? '공공 API 상품 확인 — 매장 식자재 매핑 및 1회 등록'
-                          : 'Public API Product Found — Map Ingredient & Register Once'
+                          ? '공공 API 상품 확인: 매장 식자재 매핑 및 1회 등록'
+                          : 'Public API product found: map ingredient & register once'
                         : isKo
-                        ? '미등록 바코드 — 최초 1회 상품 등록 (이후 자동 인식)'
-                        : 'Unknown Barcode — One-Time Product Registration'}
+                        ? '미등록 바코드: 최초 1회 상품 등록 (이후 자동 인식)'
+                        : 'Barcode not found. Register the product once to scan it next time.'}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        {isKo ? '상품명 (국문)' : 'Product Name (KO)'}
+                      <label className="ss-label">
+                        {isKo ? '상품명 (국문)' : 'Product name (KO)'}
                       </label>
                       <input
                         type="text"
@@ -776,12 +774,12 @@ export default function InventoryScanView() {
                         value={regNameKo}
                         onChange={e => setRegNameKo(e.target.value)}
                         placeholder="예: 강원 고랭지 절임배추 10kg"
-                        className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs"
+                        className="ss-input w-full"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        {isKo ? '상품명 (영문)' : 'Product Name (EN)'}
+                      <label className="ss-label">
+                        {isKo ? '상품명 (영문)' : 'Product name (EN)'}
                       </label>
                       <input
                         type="text"
@@ -789,12 +787,12 @@ export default function InventoryScanView() {
                         value={regNameEn}
                         onChange={e => setRegNameEn(e.target.value)}
                         placeholder="e.g., Gangwon Salted Cabbage 10kg"
-                        className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs"
+                        className="ss-input w-full"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        {isKo ? '제조사 / 브랜드' : 'Maker / Brand'}
+                      <label className="ss-label">
+                        {isKo ? '제조사 / 브랜드' : 'Maker / brand'}
                       </label>
                       <input
                         type="text"
@@ -802,17 +800,17 @@ export default function InventoryScanView() {
                         value={regMaker}
                         onChange={e => setRegMaker(e.target.value)}
                         placeholder="예: 평창영농조합"
-                        className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs"
+                        className="ss-input w-full"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        {isKo ? '연결할 매장 핵심 식자재' : 'Link to Core Ingredient'}
+                      <label className="ss-label">
+                        {isKo ? '연결할 매장 핵심 식자재' : 'Link to core ingredient'}
                       </label>
                       <select
                         value={regIngredientId}
                         onChange={e => setRegIngredientId(Number(e.target.value))}
-                        className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs"
+                        className="ss-input w-full"
                       >
                         {ingredients.map(ing => (
                           <option key={ing.id} value={ing.id}>
@@ -822,37 +820,37 @@ export default function InventoryScanView() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        {isKo ? '포장 규격 (수량 & 단위)' : 'Pack Size & Unit'}
+                      <label className="ss-label">
+                        {isKo ? '포장 규격 (수량 & 단위)' : 'Pack size & unit'}
                       </label>
-                      <div className="flex space-x-2">
+                      <div className="flex gap-2">
                         <input
                           type="number"
                           step="0.1"
                           required
                           value={regPackSize}
                           onChange={e => setRegPackSize(Number(e.target.value))}
-                          className="w-2/3 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs"
+                          className="ss-input w-2/3 tabular-nums"
                         />
                         <input
                           type="text"
                           required
                           value={regUnit}
                           onChange={e => setRegUnit(e.target.value)}
-                          className="w-1/3 px-2 py-1.5 bg-white border border-gray-300 rounded-lg text-xs"
+                          className="ss-input w-1/3"
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">
-                        {isKo ? '표준 소비기한 (일수)' : 'Standard Shelf Life (Days)'}
+                      <label className="ss-label">
+                        {isKo ? '표준 소비기한 (일수)' : 'Standard shelf life (days)'}
                       </label>
                       <input
                         type="number"
                         required
                         value={regShelfLife}
                         onChange={e => setRegShelfLife(Number(e.target.value))}
-                        className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs"
+                        className="ss-input w-full tabular-nums"
                       />
                     </div>
                   </div>
@@ -860,9 +858,9 @@ export default function InventoryScanView() {
                   <div className="flex justify-end">
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-amber-600 text-white rounded-lg text-xs font-semibold hover:bg-amber-700 transition"
+                      className="ss-btn ss-btn-primary"
                     >
-                      {isKo ? '상품 1회 등록 완료 및 입고 진행' : 'Save Product & Proceed to Receive'}
+                      {isKo ? '상품 1회 등록 및 입고 진행' : 'Register product & receive'}
                     </button>
                   </div>
                 </form>
@@ -871,40 +869,38 @@ export default function InventoryScanView() {
               {/* Case B: Registered Product -> Lot Receiving & Incoming Order Match Form */}
               {lookupResult.product && lookupResult.product.source === 'internal' && (
                 <form onSubmit={handleReceiveLot} className="space-y-4">
-                  {/* Product Summary Card */}
-                  <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  {/* Product Summary Tile */}
+                  <div className="ss-tile flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <p className="text-sm font-bold text-gray-900">
+                      <p className="text-base font-bold">
                         {isKo ? lookupResult.product.name_ko : lookupResult.product.name_en}
                       </p>
-                      <p className="text-xs text-gray-500">
-                        {lookupResult.product.maker} · {lookupResult.product.food_type} ·{' '}
-                        {isKo ? '매핑 식자재:' : 'Ingredient:'}{' '}
-                        <span className="font-semibold text-teal-800">
+                      <p className="ss-meta">
+                        {lookupResult.product.maker} / {lookupResult.product.food_type} /{' '}
+                        {isKo ? '매핑 식자재: ' : 'Ingredient: '}
+                        <strong className="text-ink">
                           {isKo ? lookupResult.product.ingredient_name_ko : lookupResult.product.ingredient_name_en}
-                        </span>
+                        </strong>
                       </p>
                     </div>
-                    <div className="text-right">
-                      <span className="text-xs font-semibold text-gray-700 bg-white px-2.5 py-1 rounded border border-gray-200">
-                        {isKo ? '기본 규격:' : 'Pack:'} {lookupResult.product.pack_size} {lookupResult.product.unit}
-                      </span>
-                    </div>
+                    <span className="ss-chip ss-chip-ok tabular-nums">
+                      {isKo ? '기본 규격:' : 'Pack:'} {lookupResult.product.pack_size} {lookupResult.product.unit}
+                    </span>
                   </div>
 
                   {/* Incoming Order Match Banner */}
                   {lookupResult.incoming_order && (
-                    <div className="p-3.5 bg-teal-50 border border-teal-200 rounded-xl space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-teal-900 flex items-center space-x-1.5">
-                          <PackageCheck className="w-4 h-4 text-teal-700" />
+                    <div className="space-y-2">
+                      <div className="ss-note justify-between">
+                        <span className="text-xs font-bold inline-flex items-center gap-1.5">
+                          <PackageCheck className="w-4 h-4" aria-hidden="true" />
                           <span>
                             {isKo
                               ? `입고 예정 발주 매칭됨 (Order #${lookupResult.incoming_order.id})`
-                              : `Matched Incoming Order #${lookupResult.incoming_order.id}`}
+                              : `Matched incoming order #${lookupResult.incoming_order.id}`}
                           </span>
                         </span>
-                        <span className="text-xs font-semibold text-teal-800">
+                        <span className="text-xs font-bold tabular-nums">
                           {isKo ? '발주 수량:' : 'Ordered:'}{' '}
                           {lookupResult.incoming_order.approved_qty ?? lookupResult.incoming_order.recommended_qty}{' '}
                           {lookupResult.product.unit}
@@ -912,12 +908,12 @@ export default function InventoryScanView() {
                       </div>
 
                       {discrepancyInfo.hasDiscrepancy && (
-                        <div className="flex items-center space-x-2 text-xs text-amber-800 bg-amber-100/80 px-3 py-1.5 rounded-lg border border-amber-300">
-                          <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
-                          <span>
+                        <div className="ss-note ss-note-attention">
+                          <AlertTriangle className="w-4 h-4 text-signal" aria-hidden="true" />
+                          <span className="text-xs">
                             {isKo
-                              ? `수량 차이 감지: 발주 ${discrepancyInfo.expectedQty}${lookupResult.product.unit} vs 입고 입력 ${receiveQty}${lookupResult.product.unit} (차이 ${discrepancyInfo.diff > 0 ? '+' : ''}${discrepancyInfo.diff}${lookupResult.product.unit}) — 감사 로그에 자동 기록됩니다.`
-                              : `Quantity discrepancy: ordered ${discrepancyInfo.expectedQty} vs receiving ${receiveQty} (${discrepancyInfo.diff > 0 ? '+' : ''}${discrepancyInfo.diff}) — will be logged in Audit Log.`}
+                              ? `수량 차이 감지: 발주 ${discrepancyInfo.expectedQty} ${lookupResult.product.unit} vs 입고 입력 ${receiveQty} ${lookupResult.product.unit} (차이 ${discrepancyInfo.diff > 0 ? '+' : ''}${discrepancyInfo.diff} ${lookupResult.product.unit}) — 감사 로그에 자동 기록됩니다.`
+                              : `Quantity discrepancy: ordered ${discrepancyInfo.expectedQty} vs receiving ${receiveQty} (${discrepancyInfo.diff > 0 ? '+' : ''}${discrepancyInfo.diff}) — logged in audit log.`}
                           </span>
                         </div>
                       )}
@@ -927,8 +923,8 @@ export default function InventoryScanView() {
                   {/* Receiving Fields */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1">
-                        {isKo ? `입고 수량 (${lookupResult.product.unit})` : `Receiving Quantity (${lookupResult.product.unit})`}
+                      <label className="ss-label">
+                        {isKo ? `입고 수량 (${lookupResult.product.unit})` : `Receiving quantity (${lookupResult.product.unit})`}
                       </label>
                       <input
                         type="number"
@@ -936,35 +932,35 @@ export default function InventoryScanView() {
                         required
                         value={receiveQty}
                         onChange={e => setReceiveQty(Number(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs"
+                        className="ss-input w-full tabular-nums font-bold"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1">
-                        {isKo ? '단가 (₩ / 단위)' : 'Unit Cost (₩ / unit)'}
+                      <label className="ss-label">
+                        {isKo ? '단가 (₩ / 단위)' : 'Unit cost (₩ / unit)'}
                       </label>
                       <input
                         type="number"
                         required
                         value={receiveUnitCost}
                         onChange={e => setReceiveUnitCost(Number(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs"
+                        className="ss-input w-full tabular-nums"
                       />
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-semibold text-gray-700">
-                          {isKo ? '소비기한 (Use-by Date)' : '소비기한 (Use-by Date)'}
+                        <label className="ss-label mb-0">
+                          {isKo ? '소비기한 (Use-by date)' : '소비기한 (use-by date)'}
                         </label>
-                        <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">
+                        <span className="ss-chip ss-chip-info">
                           {receiveSource === 'auto'
-                            ? isKo ? 'GS1 자동 (auto)' : 'GS1 Auto'
+                            ? isKo ? 'GS1 자동 (auto)' : 'GS1 auto'
                             : receiveSource === 'estimated'
                             ? isKo ? '표준기한 추정 (estimated)' : 'Estimated'
                             : receiveSource === 'photo'
-                            ? isKo ? '사진 스텁 (photo)' : 'Photo Stub'
+                            ? isKo ? '사진 스텁 (photo)' : 'Photo stub'
                             : isKo ? '수동 입력 (manual)' : 'Manual'}
                         </span>
                       </div>
@@ -976,52 +972,53 @@ export default function InventoryScanView() {
                           setReceiveExpiry(e.target.value);
                           setReceiveSource('manual');
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs"
+                        className="ss-input w-full tabular-nums"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1">
-                        {isKo ? '배치 / 로트 번호 (Batch/Lot)' : 'Batch / Lot Number'}
+                      <label className="ss-label">
+                        {isKo ? '배치 / 로트 번호' : 'Batch / lot number'}
                       </label>
                       <input
                         type="text"
                         value={receiveBatch}
                         onChange={e => setReceiveBatch(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-mono"
+                        className="ss-input w-full tabular-nums"
                       />
                     </div>
                   </div>
 
                   {/* Expiry Label Photo OCR Stub Upload + Submit */}
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                    <label className="flex items-center space-x-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium cursor-pointer transition">
-                      <Upload className="w-3.5 h-3.5 text-gray-600" />
-                      <span>{isKo ? '소비기한 라벨 사진 업로드 (OCR 스텁)' : 'Upload 소비기한 Photo (OCR Stub)'}</span>
+                    <label className="ss-btn ss-btn-secondary ss-btn-sm">
+                      <Upload className="w-4 h-4" aria-hidden="true" />
+                      <span>{isKo ? '소비기한 라벨 사진 업로드 (OCR 스텁)' : 'Upload 소비기한 photo (OCR stub)'}</span>
                       <input type="file" accept="image/*" onChange={handleOcrPhotoUpload} className="hidden" />
                     </label>
 
                     <button
                       type="submit"
-                      className="px-5 py-2 bg-[#078B79] text-white rounded-lg text-xs font-bold hover:bg-teal-800 transition shadow-sm"
+                      className="ss-btn ss-btn-primary"
                     >
-                      {isKo ? '로트 입고 확정 (FEFO 등록)' : 'Confirm Lot Receiving (FEFO)'}
+                      {isKo ? '로트 입고 확정 (FEFO 등록)' : 'Receive lot into stock'}
                     </button>
                   </div>
 
                   {ocrMessage && (
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900">
-                      {ocrMessage}
+                    <div className="ss-note ss-note-attention">
+                      <CheckCircle2 className="w-4 h-4 text-signal" aria-hidden="true" />
+                      <span>{ocrMessage}</span>
                     </div>
                   )}
 
                   {receiveSuccessMsg && (
-                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 flex items-start space-x-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                    <div className="ss-note ss-note-attention">
+                      <CheckCircle2 className="w-4 h-4 text-signal" aria-hidden="true" />
                       <div>
-                        <p className="font-semibold">{receiveSuccessMsg}</p>
+                        <p className="font-bold">{receiveSuccessMsg}</p>
                         {receiveDiscrepancyMsg && (
-                          <p className="text-amber-800 font-medium mt-1">⚠ {receiveDiscrepancyMsg}</p>
+                          <p className="text-xs ss-muted mt-1">{receiveDiscrepancyMsg}</p>
                         )}
                       </div>
                     </div>
@@ -1030,73 +1027,80 @@ export default function InventoryScanView() {
               )}
             </div>
           )}
-        </div>
+        </section>
       </div>
 
       {/* M4: Supplier-Window Expiry-Risk Simulation & Physical Spot Count */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left 7 cols: Expiry-Risk Simulation & FEFO Depletion Simulator */}
-        <div className="lg:col-span-7 bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h3 className="font-bold text-gray-800 text-sm">
-                {isKo
-                  ? '공급 주기별 소비기한 만료 위험(Expiry-Risk) & FEFO 소진 시뮬레이션'
-                  : 'Supplier-Window Expiry-Risk & FEFO Depletion Simulator'}
-              </h3>
-              <p className="text-xs text-gray-500">
-                {isKo
-                  ? '사용 기간 전에 소비기한이 만료되는 로트(예: 앞다리살 Lot A 4.0kg)는 가용 재고에서 자동 제외됩니다.'
-                  : 'Lots expiring before the supplier use window ends (e.g., Pork Lot A 4.0 kg) are excluded as at-risk.'}
-              </p>
-            </div>
-            <div className="flex items-center space-x-1 bg-gray-100 p-1 rounded-lg text-xs">
-              {[3, 5, 7].map(d => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => {
-                    setCoverageDays(d);
-                    fetchAllInventoryData(d);
-                  }}
-                  className={`px-2.5 py-1 rounded-md transition ${
-                    coverageDays === d ? 'bg-white shadow text-teal-800 font-semibold' : 'text-gray-600'
-                  }`}
-                >
-                  {isKo ? `${d}일 주기` : `${d}d Window`}
-                </button>
-              ))}
+        <section className="lg:col-span-7 ss-section space-y-4">
+          <div className="ss-section-title justify-between flex-wrap">
+            <span>
+              {isKo
+                ? '공급 주기별 소비기한 만료 위험 & FEFO 소진 시뮬레이터'
+                : 'Supplier-window 소비기한 risk & FEFO simulator'}
+            </span>
+            <div className="inline-flex border border-ink font-normal">
+              {[3, 5, 7].map(d => {
+                const active = coverageDays === d;
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => {
+                      setCoverageDays(d);
+                      fetchAllInventoryData(d);
+                    }}
+                    className={`px-2.5 py-1 text-xs font-bold cursor-pointer ${
+                      active ? 'bg-ink text-paper' : 'bg-paper text-ink hover:bg-ink/5'
+                    }`}
+                  >
+                    {isKo ? `${d}일 주기` : `${d}d window`}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
+          <p className="text-sm ss-muted">
+            {isKo
+              ? '사용 기간 전에 소비기한이 만료되는 로트(예: 앞다리살 Lot A 4.0 kg)는 가용 재고에서 자동 제외됩니다.'
+              : 'Lots expiring before the supplier use window ends (e.g., Pork Lot A 4.0 kg) are excluded as at-risk.'}
+          </p>
+
           {/* At-Risk Ingredients Highlight Table */}
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="w-full text-left border-collapse text-xs">
+          <div className="ss-table-wrap">
+            <table className="ss-table">
               <thead>
-                <tr className="bg-gray-50 text-gray-500 border-b border-gray-200">
-                  <th className="py-2 px-3">{isKo ? '식자재' : 'Ingredient'}</th>
-                  <th className="py-2 px-3 text-right">{isKo ? '장부 총재고' : 'Total On-Hand'}</th>
-                  <th className="py-2 px-3 text-right text-teal-800">{isKo ? '가용 재고' : 'Usable'}</th>
-                  <th className="py-2 px-3 text-right text-red-700">{isKo ? '만료위험 제외' : 'At-Risk Excluded'}</th>
-                  <th className="py-2 px-3 text-right">{isKo ? '위험 금액' : 'At-Risk ₩'}</th>
+                <tr>
+                  <th>{isKo ? '식자재' : 'Ingredient'}</th>
+                  <th className="ss-num">{isKo ? '장부 총재고' : 'Total on-hand'}</th>
+                  <th className="ss-num">{isKo ? '가용 재고' : 'Usable'}</th>
+                  <th className="ss-num">{isKo ? '만료위험 제외' : 'At-risk excluded'}</th>
+                  <th className="ss-num">{isKo ? '위험 금액' : 'At-risk (₩)'}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {expiryRisks.slice(0, 6).map(r => (
-                  <tr key={r.ingredient_id} className={r.at_risk_qty > 0 ? 'bg-red-50/40' : ''}>
-                    <td className="py-2 px-3 font-semibold text-gray-900">
+                  <tr key={r.ingredient_id} className={r.at_risk_qty > 0 ? 'ss-row-critical' : ''}>
+                    <td className="font-bold">
                       {isKo ? r.name_ko : r.name_en}
                     </td>
-                    <td className="py-2 px-3 text-right font-mono">
+                    <td className="ss-num">
                       {r.total_on_hand_qty} {r.unit}
                     </td>
-                    <td className="py-2 px-3 text-right font-mono font-bold text-teal-800">
+                    <td className="ss-num font-bold">
                       {r.usable_qty} {r.unit}
                     </td>
-                    <td className="py-2 px-3 text-right font-mono font-bold text-red-600">
-                      {r.at_risk_qty > 0 ? `${r.at_risk_qty} ${r.unit}` : '-'}
+                    <td className="ss-num">
+                      {r.at_risk_qty > 0 ? (
+                        <span className="ss-chip ss-chip-critical">
+                          <AlertTriangle aria-hidden="true" />
+                          {r.at_risk_qty} {r.unit}
+                        </span>
+                      ) : '-'}
                     </td>
-                    <td className="py-2 px-3 text-right font-mono text-gray-700">
+                    <td className="ss-num">
                       {r.at_risk_value_krw > 0 ? `₩${r.at_risk_value_krw.toLocaleString()}` : '-'}
                     </td>
                   </tr>
@@ -1106,15 +1110,15 @@ export default function InventoryScanView() {
           </div>
 
           {/* Interactive FEFO Depletion Simulator */}
-          <div className="pt-2 border-t border-gray-100 space-y-2">
-            <p className="text-xs font-semibold text-gray-700">
-              {isKo ? 'FEFO 로트 차감 시뮬레이터 (선입선출/소비기한 임박순)' : 'Interactive FEFO Lot Depletion Simulator'}
+          <div className="pt-4 border-t border-ink/15 space-y-3">
+            <p className="text-sm font-bold">
+              {isKo ? 'FEFO 로트 차감 시뮬레이터 (소비기한 임박순)' : 'Interactive FEFO lot depletion simulator'}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <select
                 value={depleteIngredientId}
                 onChange={e => setDepleteIngredientId(Number(e.target.value))}
-                className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white"
+                className="ss-input"
               >
                 {ingredients.map(ing => (
                   <option key={ing.id} value={ing.id}>
@@ -1127,53 +1131,51 @@ export default function InventoryScanView() {
                 step="0.1"
                 value={depleteDemandQty}
                 onChange={e => setDepleteDemandQty(Number(e.target.value))}
-                className="w-24 px-3 py-1.5 border border-gray-300 rounded-lg text-xs"
+                className="ss-input w-28 tabular-nums"
               />
               <button
                 type="button"
                 onClick={() => handleRunFefoSim(false)}
-                className="px-3 py-1.5 bg-teal-700 text-white rounded-lg text-xs font-semibold hover:bg-teal-800 transition"
+                className="ss-btn ss-btn-primary ss-btn-sm"
               >
-                {isKo ? 'FEFO 소진 시뮬레이션' : 'Simulate FEFO'}
+                {isKo ? 'FEFO 소진 시뮬레이션' : 'Simulate FEFO depletion'}
               </button>
             </div>
 
             {depleteSimResult && (
-              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs space-y-1">
-                <p className="font-semibold text-gray-800">
+              <div className="ss-note flex-col items-start">
+                <p className="font-bold text-sm tabular-nums">
                   {isKo
                     ? `요청 수요 ${depleteSimResult.requested_demand_qty} → 총 차감 ${depleteSimResult.total_depleted_qty} (부족분: ${depleteSimResult.unmet_shortfall_qty})`
                     : `Demand ${depleteSimResult.requested_demand_qty} → Depleted ${depleteSimResult.total_depleted_qty} (Shortfall: ${depleteSimResult.unmet_shortfall_qty})`}
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {depleteSimResult.updated_lots?.map((u: any) => (
-                    <span key={u.id} className="px-2 py-1 bg-white border border-gray-200 rounded font-mono text-[11px]">
-                      {u.batch_number || `Lot #${u.id}`} ({u.expiry_date}): -{u.depleted_qty} → {u.remaining_qty} ({u.status_after})
+                    <span key={u.id} className="ss-chip ss-chip-ok tabular-nums">
+                      {u.batch_number || `Lot #${u.id}`} ({u.expiry_date}): −{u.depleted_qty} → {u.remaining_qty} ({u.status_after})
                     </span>
                   ))}
                 </div>
               </div>
             )}
           </div>
-        </div>
+        </section>
 
         {/* Right 5 cols: Physical Spot Count Adjustment */}
-        <div className="lg:col-span-5 bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
-          <div>
-            <h3 className="font-bold text-gray-800 text-sm">
-              {isKo ? '현장 실사 및 재고 차이 조정 (Spot Count)' : 'Physical Spot Count & Variance Adjustment'}
-            </h3>
-            <p className="text-xs text-gray-500">
-              {isKo
-                ? '실사 수량 입력 시 장부 재고와의 차이를 FEFO 순서로 조정하고 감사 로그에 기록합니다.'
-                : 'Adjusts active lots in FEFO order to match physical count and logs variance in Audit Log.'}
-            </p>
-          </div>
+        <section className="lg:col-span-5 ss-section space-y-4">
+          <h2 className="ss-section-title">
+            {isKo ? '현장 실사 및 재고 차이 조정 (Spot count)' : 'Physical spot count & variance'}
+          </h2>
+          <p className="text-sm ss-muted">
+            {isKo
+              ? '실사 수량 입력 시 장부 재고와의 차이를 FEFO 순서로 조정하고 감사 로그에 기록합니다.'
+              : 'Adjusts active lots in FEFO order to match physical count and logs variance in the audit log.'}
+          </p>
 
-          <form onSubmit={handleSpotCountSubmit} className="space-y-3">
+          <form onSubmit={handleSpotCountSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                {isKo ? '실사 대상 식자재' : 'Select Ingredient'}
+              <label className="ss-label">
+                {isKo ? '실사 대상 식자재' : 'Ingredient'}
               </label>
               <select
                 value={spotIngredientId}
@@ -1188,7 +1190,7 @@ export default function InventoryScanView() {
                   );
                   setSpotCountedQty(sysQ);
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white"
+                className="ss-input w-full"
               >
                 {ingredients.map(ing => (
                   <option key={ing.id} value={ing.id}>
@@ -1198,16 +1200,16 @@ export default function InventoryScanView() {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-[11px] text-gray-500">{isKo ? '현재 장부상 재고' : 'System On-Hand'}</p>
-                <p className="text-base font-bold text-gray-900 mt-0.5">
+            <div className="grid grid-cols-2 gap-3 items-end">
+              <div className="ss-tile p-3">
+                <p className="ss-meta">{isKo ? '현재 장부상 재고' : 'System on-hand'}</p>
+                <p className="text-lg font-bold tabular-nums mt-0.5">
                   {selectedSpotSystemQty} {selectedSpotIng?.unit || 'kg'}
                 </p>
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-gray-700 mb-1">
-                  {isKo ? `실제 실사 수량 (${selectedSpotIng?.unit || 'kg'})` : `Physical Count (${selectedSpotIng?.unit || 'kg'})`}
+                <label className="ss-label">
+                  {isKo ? `실제 실사 수량 (${selectedSpotIng?.unit || 'kg'})` : `Physical count (${selectedSpotIng?.unit || 'kg'})`}
                 </label>
                 <input
                   type="number"
@@ -1215,155 +1217,166 @@ export default function InventoryScanView() {
                   required
                   value={spotCountedQty}
                   onChange={e => setSpotCountedQty(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-bold"
+                  className="ss-input w-full font-bold tabular-nums"
                 />
               </div>
             </div>
 
-            <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-lg flex items-center justify-between text-xs">
-              <span className="text-gray-700 font-medium">{isKo ? '예상 재고 차이 (Variance):' : 'Projected Variance:'}</span>
-              <span className={`font-mono font-bold ${spotPreview.varianceQty < 0 ? 'text-red-700' : spotPreview.varianceQty > 0 ? 'text-teal-800' : 'text-gray-600'}`}>
+            <div className="ss-note justify-between">
+              <span className="text-xs font-bold">{isKo ? '예상 재고 차이 (Variance):' : 'Projected variance:'}</span>
+              <span className="font-bold text-xs tabular-nums">
                 {spotPreview.varianceQty > 0 ? '+' : ''}
                 {spotPreview.varianceQty} {selectedSpotIng?.unit || 'kg'} (₩{spotPreview.varianceKrw.toLocaleString()})
               </span>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                {isKo ? '실사 조정 사유' : 'Adjustment Reason'}
+              <label className="ss-label">
+                {isKo ? '실사 조정 사유' : 'Adjustment reason'}
               </label>
               <input
                 type="text"
                 required
                 value={spotReason}
                 onChange={e => setSpotReason(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs"
+                className="ss-input w-full"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-2 bg-[#078B79] text-white rounded-lg text-xs font-bold hover:bg-teal-800 transition shadow-sm"
+              className="ss-btn ss-btn-primary w-full"
             >
-              {isKo ? '현장 실사 반영 및 감사로그 기록' : 'Apply Spot Count & Log Variance'}
+              {isKo ? '실사 수량 저장' : 'Save count'}
             </button>
 
             {spotResultMsg && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 font-medium">
-                {spotResultMsg}
+              <div className="ss-note ss-note-attention">
+                <CheckCircle2 className="w-4 h-4 text-signal" aria-hidden="true" />
+                <span>{spotResultMsg}</span>
               </div>
             )}
           </form>
-        </div>
+        </section>
       </div>
 
       {/* Active Stock Table (FEFO Ordered) */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h3 className="font-bold text-gray-800 text-sm">
-              {isKo ? '현재 가용 재고 로트 테이블 (FEFO: 소비기한 임박순)' : 'Active Inventory Stock Table (FEFO Order by 소비기한)'}
-            </h3>
-            <p className="text-xs text-gray-500">
-              {isKo
-                ? '모든 재고는 소비기한(Use-by Date)이 가장 빠른 로트부터 먼저 소진(FEFO)됩니다.'
-                : 'All lots are depleted in strict First-Expired, First-Out (FEFO) order based on 소비기한.'}
-            </p>
-          </div>
+      <section className="ss-section">
+        <div className="ss-section-title justify-between flex-wrap">
+          <span>
+            {isKo ? '가용 재고 로트 테이블 (FEFO: 소비기한 임박순)' : 'Active stock lots (FEFO order by 소비기한)'}
+          </span>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 font-normal">
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5" />
+              <Search className="w-4 h-4 absolute left-2.5 top-3 opacity-60" aria-hidden="true" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder={isKo ? '식자재 / 배치 검색...' : 'Search ingredient / batch...'}
-                className="pl-8 pr-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-teal-600"
+                placeholder={isKo ? '식자재 / 배치 검색...' : 'Search ingredient or batch...'}
+                className="ss-input pl-8 text-xs"
               />
             </div>
 
-            <div className="bg-gray-100 p-1 rounded-lg flex text-xs font-medium">
-              {(['all', 'urgent', 'warning', 'good'] as const).map(st => (
-                <button
-                  key={st}
-                  type="button"
-                  onClick={() => setStatusFilter(st)}
-                  className={`px-2.5 py-1 rounded-md transition ${
-                    statusFilter === st ? 'bg-white shadow text-teal-800 font-semibold' : 'text-gray-600'
-                  }`}
-                >
-                  {st === 'all'
-                    ? isKo ? '전체' : 'All'
-                    : st === 'urgent'
-                    ? isKo ? '긴급(≤2일)' : 'Urgent (≤2d)'
-                    : st === 'warning'
-                    ? isKo ? '주의(3~5일)' : 'Warning (3-5d)'
-                    : isKo ? '양호(>5일)' : 'Good (>5d)'}
-                </button>
-              ))}
+            <div className="inline-flex border border-ink">
+              {(['all', 'urgent', 'warning', 'good'] as const).map(st => {
+                const active = statusFilter === st;
+                return (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setStatusFilter(st)}
+                    className={`px-2.5 py-2 text-xs font-bold cursor-pointer ${
+                      active ? 'bg-ink text-paper' : 'bg-paper text-ink hover:bg-ink/5'
+                    }`}
+                  >
+                    {st === 'all'
+                      ? isKo ? '전체' : 'All'
+                      : st === 'urgent'
+                      ? isKo ? '긴급 (≤2일)' : 'Urgent (≤2d)'
+                      : st === 'warning'
+                      ? isKo ? '주의 (3~5일)' : 'Warning (3–5d)'
+                      : isKo ? '양호 (>5일)' : 'Good (>5d)'}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
 
+        <p className="text-sm ss-muted mb-4">
+          {isKo
+            ? '모든 재고는 소비기한(Use-by date)이 가장 빠른 로트부터 먼저 소진(FEFO)됩니다.'
+            : 'All lots are depleted in strict First-Expired, First-Out (FEFO) order based on 소비기한.'}
+        </p>
+
         {loadingLots ? (
-          <div className="p-8 text-center text-sm text-gray-400">
+          <div className="p-8 border border-ink/15 text-center text-sm ss-muted">
             {isKo ? '재고 로트 불러오는 중...' : 'Loading inventory lots...'}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className="ss-table-wrap">
+            <table className="ss-table">
               <thead>
-                <tr className="bg-gray-50 text-gray-500 text-xs uppercase border-b border-gray-200">
-                  <th className="py-3 px-4">{isKo ? 'FEFO 순위' : 'FEFO #'}</th>
-                  <th className="py-3 px-4">{isKo ? '식자재명' : 'Ingredient'}</th>
-                  <th className="py-3 px-4">{isKo ? '배치 번호' : 'Batch'}</th>
-                  <th className="py-3 px-4 text-right">{isKo ? '현재 잔량' : 'On-Hand Qty'}</th>
-                  <th className="py-3 px-4">{isKo ? '입고일' : 'Received'}</th>
-                  <th className="py-3 px-4">{isKo ? '소비기한 (Use-by)' : '소비기한 (Use-by)'}</th>
-                  <th className="py-3 px-4">{isKo ? '잔여일 / 상태' : 'Days Left'}</th>
-                  <th className="py-3 px-4">{isKo ? '인식 출처' : 'Source'}</th>
-                  <th className="py-3 px-4 text-right">{isKo ? '로트 금액' : 'Lot Value'}</th>
+                <tr>
+                  <th>{isKo ? 'FEFO 순위' : 'FEFO #'}</th>
+                  <th>{isKo ? '식자재명' : 'Ingredient'}</th>
+                  <th>{isKo ? '배치 번호' : 'Batch'}</th>
+                  <th className="ss-num">{isKo ? '현재 잔량' : 'On-hand qty'}</th>
+                  <th>{isKo ? '입고일' : 'Received'}</th>
+                  <th>{isKo ? '소비기한 (Use-by)' : '소비기한 (use-by)'}</th>
+                  <th>{isKo ? '잔여일 / 상태' : 'Days left'}</th>
+                  <th>{isKo ? '인식 출처' : 'Source'}</th>
+                  <th className="ss-num">{isKo ? '로트 금액' : 'Lot value'}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 text-sm">
+              <tbody>
                 {filteredLots.map((lot, idx) => {
-                  const badgeStyle =
-                    lot.expiry_status === 'expired' || lot.expiry_status === 'urgent'
-                      ? 'bg-red-100 text-red-800 border border-red-200'
-                      : lot.expiry_status === 'warning'
-                      ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                      : 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+                  const isCritical = lot.expiry_status === 'expired' || lot.expiry_status === 'urgent';
+                  const chipClass = isCritical
+                    ? 'ss-chip-critical'
+                    : lot.expiry_status === 'warning'
+                    ? 'ss-chip-attention'
+                    : 'ss-chip-ok';
 
                   return (
-                    <tr key={lot.id} className="hover:bg-gray-50">
-                      <td className="py-3 px-4 font-mono text-xs text-gray-500">#{idx + 1}</td>
-                      <td className="py-3 px-4 font-semibold text-gray-900">
+                    <tr
+                      key={lot.id}
+                      className={isCritical ? 'ss-row-critical' : idx === 0 ? 'ss-row-selected' : ''}
+                    >
+                      <td className="tabular-nums ss-muted">
+                        #{idx + 1}
+                        {idx === 0 && (
+                          <span className="ss-chip ss-chip-info ml-2">
+                            {isKo ? '우선 출고' : 'Use first'}
+                          </span>
+                        )}
+                      </td>
+                      <td className="font-bold">
                         {isKo ? lot.ingredient_name_ko : lot.ingredient_name_en}
                         {lot.product_name_ko && (
-                          <p className="text-xs font-normal text-gray-500">
+                          <p className="text-xs font-normal ss-muted">
                             {isKo ? lot.product_name_ko : lot.product_name_en}
                           </p>
                         )}
                       </td>
-                      <td className="py-3 px-4 font-mono text-xs text-gray-600">
+                      <td className="tabular-nums ss-muted">
                         {lot.batch_number || '-'}
                       </td>
-                      <td className="py-3 px-4 text-right font-bold text-teal-800">
+                      <td className="ss-num font-bold">
                         {lot.quantity} {lot.unit}
-                        <span className="text-xs font-normal text-gray-400 ml-1">
+                        <span className="text-xs font-normal ss-muted ml-1">
                           / {lot.original_quantity}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-xs text-gray-600">{lot.received_date}</td>
-                      <td className="py-3 px-4 font-mono text-xs font-semibold text-gray-900">
+                      <td className="tabular-nums ss-muted">{lot.received_date}</td>
+                      <td className="tabular-nums font-bold">
                         {lot.expiry_date}
                       </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-0.5 rounded text-xs font-semibold inline-flex items-center space-x-1 ${badgeStyle}`}>
-                          {(lot.expiry_status === 'expired' || lot.expiry_status === 'urgent') && (
-                            <ShieldAlert className="w-3 h-3 mr-1" />
-                          )}
+                      <td>
+                        <span className={`ss-chip ${chipClass}`}>
+                          {isCritical && <ShieldAlert aria-hidden="true" />}
                           <span>
                             {lot.days_until_expiry < 0
                               ? isKo ? `만료 (${lot.days_until_expiry}일)` : `Expired (${lot.days_until_expiry}d)`
@@ -1371,12 +1384,12 @@ export default function InventoryScanView() {
                           </span>
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-xs">
-                        <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-medium">
+                      <td>
+                        <span className="ss-chip ss-chip-ok">
                           {lot.source}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right text-gray-700 font-medium">
+                      <td className="ss-num">
                         ₩{Math.round(lot.quantity * lot.unit_cost_krw).toLocaleString()}
                       </td>
                     </tr>
@@ -1386,7 +1399,7 @@ export default function InventoryScanView() {
             </table>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

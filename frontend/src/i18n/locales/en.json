@@ -2,34 +2,34 @@
   "app_name": "ShelfSense",
   "demo_data_badge": "Demo data",
   "demo_data_subtitle": "Fictional restaurant: Seoul Kimchi Jjigae House (서울 김치찌개집)",
-  "demo_clock": "Demo Clock",
+  "demo_clock": "Demo clock",
   "nav": {
-    "summary": "Morning Summary",
+    "summary": "Morning summary",
     "forecast": "Forecast",
-    "stock": "Stock & Scan",
+    "stock": "Stock & scan",
     "orders": "Orders",
-    "prep": "Prep Sheet",
-    "waste": "Waste Log",
-    "labor": "Labor & Schedule",
+    "prep": "Prep sheet",
+    "waste": "Waste log",
+    "labor": "Labor & schedule",
     "settings": "Settings"
   },
   "actions": {
-    "approve": "Approve",
+    "approve": "Approve order",
     "edit": "Edit",
-    "reject": "Reject",
-    "save": "Save",
+    "reject": "Reject order",
+    "save": "Save changes",
     "cancel": "Cancel",
-    "scan": "Scan Barcode",
-    "spot_count": "Spot Count"
+    "scan": "Scan barcode",
+    "spot_count": "Spot count"
   },
   "labels": {
-    "food_cost_pct": "Food Cost %",
-    "labor_cost_pct": "Labor Cost %",
-    "prime_cost_pct": "Prime Cost %",
+    "food_cost_pct": "Food cost %",
+    "labor_cost_pct": "Labor cost %",
+    "prime_cost_pct": "Prime cost %",
     "waste_krw": "Waste",
-    "forecast_error": "Forecast WAPE",
-    "expiry_date": "소비기한 (Expiry)",
-    "at_risk": "At Risk",
+    "forecast_error": "Forecast error (WAPE)",
+    "expiry_date": "소비기한 (use-by date)",
+    "at_risk": "At risk",
     "usable": "Usable",
     "status": "Status",
     "quantity": "Quantity",
@@ -37,4 +37,3 @@
     "supplier": "Supplier"
   }
 }
-
