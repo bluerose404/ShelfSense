@@ -1,75 +1,87 @@
-# ShelfSense (쉘프센스) — Autonomous Back-of-House Assistant Prototype
+# ShelfSense
 
-> **Bilingual (Korean / English) Back-of-House Operations Prototype for "서울 김치찌개집" (Seoul Kimchi Jjigae House)**  
-> **Synthetic Demo Data Only (`seed = 42`) · Simulated Demo Clock: Wednesday `2026-11-04 09:00:00`**
+<img src="docs/logo.png" alt="ShelfSense logo" width="96" />
 
----
+ShelfSense is a bilingual (Korean / English) back-of-house operations prototype built for an independent Korean restaurant, **서울 김치찌개집 (Seoul Kimchi Jjigae House)**. It handles daily demand forecasting, barcode and GS1 2D receiving, FEFO inventory tracking, supplier ordering, prep sheets, waste logging, and labor scheduling under Korean labor standards.
 
-## 1. Overview
-**ShelfSense** is a bilingual (한국어 / English) decision-support prototype designed for independent Korean restaurants. It unifies:
-1. **M1 — Deterministic Synthetic Data & Schema**: 12 months (`2025-11-04` to `2026-11-03`) of weather- and holiday-driven sales across 10 dishes (9 main dishes, 1 side dish `계란말이`), 18 ingredients, 40 EAN-13 packaged products, weekly inventory snapshots with strict week-to-week continuity and $\le 5\%$ reconciliation, and isolated RNG streams per table.
-2. **M2 — Walk-Forward Demand Forecasting Engine**: 8-fold rolling-origin backtest (`HistGradientBoostingRegressor` vs. Standard 4-Week & Holiday-Aware 4-Week baselines) with origin-anchored lags, horizon-matched weather (`h = 0..3` noisy forecast, `h = 4..6` seasonal climatology), per-horizon-bucket P90 calibration (`89.29%` pooled holdout coverage), and empirical summed-residual ingredient buffers.
-3. **M3 — Barcode & GS1 2D Scan Receiving**: `@zxing/browser` live camera/preset scanner for EAN-13 and GS1 2D (`AI (01)` GTIN, `AI (17)` **소비기한**, `AI (10)` Batch), 3-tier product lookup (`Internal DB -> Public Food API Mock -> One-Time Registration`), incoming order receiving match with discrepancy detection, and FEFO stock table.
-4. **M4 — FEFO Depletion, Supplier-Window Expiry-Risk & Spot Count**: Pure FEFO lot depletion, supplier coverage window expiry-risk simulation (excluding lots expiring before use window ends), and physical spot-count variance adjustment with `StockSnapshot` and `AuditLog`.
-5. **M5 — Human-in-the-Loop Order Lifecycle & Daily Prep Sheet**: Full order lifecycle (`proposed -> approved | edited -> incoming -> received | rejected`), Autonomy Levels 1–2 (with Level 3 permanently disabled), price surge (`+12%`) & spend cap alerts, and station-grouped Daily Kitchen Prep Sheet with FEFO first-lot pull instructions.
-6. **M6 — Waste Analytics, Korean Labor Standards Act Draft & Early-Cut Simulator**: FEFO-linked waste logging, weekly labor schedule draft checked against 2026 minimum wage (`₩10,320/hr`), statutory rest breaks (`4h -> 30m`, `8h -> 1h`), weekly hours caps, **주휴수당** (`>= 15h/wk`), and 5+ employee `1.5x` multipliers (with explicit non-payroll disclaimer), plus a slow-shift Early-Cut Simulator.
-7. **M7 — Executive Morning Summary, Settings & Immutable Audit Log**: Unified morning brief dashboard (`Prime Cost 58.8%`, urgent **소비기한** alerts, one-tap order approval, prep & labor snapshot), guardrails configuration, and immutable `AuditLog` viewer.
+All data in this repository is deterministic synthetic demo data (`seed = 42`), anchored to a simulated clock of **Wednesday, 2026-11-04 09:00**.
 
----
+## Features
 
-## 2. Quick Start (Windows PowerShell)
+- **Demand Forecasting**: Walk-forward 7-day forecast across 10 menu items and 2 dayparts using `HistGradientBoostingRegressor`, evaluated with an 8-fold rolling-origin backtest against 4-week moving-average baselines (9.97% holdout WAPE, 89.29% pooled P90 coverage).
+- **Barcode & GS1 2D Receiving**: Browser camera and preset scanner (`@zxing/browser`) for EAN-13 and GS1 2D payloads (`AI 01` GTIN, `AI 17` 소비기한, `AI 10` batch), backed by a 3-tier product lookup (internal catalog, public food API fallback, and one-time registration) and incoming order discrepancy checks.
+- **FEFO Inventory & Expiry Risk**: First-Expired, First-Out lot depletion, supplier coverage-window expiry-risk simulation (excluding lots that expire before use), and physical spot-count variance adjustments.
+- **Human-in-the-Loop Ordering**: Pack-rounded order recommendations with price-surge and spend-cap checks. Supports Autonomy Level 1 (suggest) and Level 2 (one-tap approve); Level 3 (full auto-order) is permanently disabled so the owner approves every order.
+- **Daily Prep & Waste**: Station-grouped prep sheet incorporating yield loss and earliest-expiring lot pull instructions, paired with FEFO-linked waste logging.
+- **Korean Labor Scheduling**: Weekly schedule draft and slow-shift early-cut simulator checked against the 2026 statutory minimum wage (`₩10,320/hr`), mandatory rest breaks, weekly hour caps, 주휴수당 (`>= 15h/wk`), and 5+ employee overtime multipliers. All figures are scheduling estimates and do not execute payroll.
 
-Run all commands from the project root (`e:\ShelfSense\ShelfSense`):
+## Tech Stack
+
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4, Recharts, `@zxing/browser`, `i18next`
+- **Backend**: Python, FastAPI, SQLModel, SQLite, pandas, scikit-learn, `holidays`
+
+## Getting Started
+
+### Windows (PowerShell)
 
 ```powershell
-# 1. Create clean Python venv and install pinned backend + frontend dependencies
+# Set up Python virtual environment and install dependencies
 .\run.ps1 setup
 
-# 2. Regenerate the deterministic synthetic SQLite database (seed=42)
+# Regenerate the deterministic SQLite database (seed=42)
 .\run.ps1 seed
 
-# 3. Run full test & build suite (Backend pytest + Frontend Vitest + TypeScript/Vite build)
+# Run backend pytest suite, frontend unit tests, and production build
 .\run.ps1 test
 
-# 4. Launch FastAPI backend (http://127.0.0.1:8000) and Vite frontend (http://localhost:5173)
+# Start FastAPI (http://127.0.0.1:8000) and Vite (http://localhost:5173)
 .\run.ps1 dev
 ```
 
----
+### macOS / Linux
 
-## 3. Key Verification Benchmarks & Canonical Fixtures
+```bash
+make setup
+make seed
+make test
+make dev
+```
 
-| Benchmark / Fixture | Verified Result | Test File |
-| :--- | :--- | :--- |
-| **Holdout Forecast Accuracy (Folds 5–8, 20 Series)** | Model WAPE **`9.97%`** vs. Standard Baseline `15.28%` (FVA `+34.78%`, `20/20` synthetic win share) and Holiday-Aware Baseline `10.54%` (FVA `+5.47%`, `15/20` win share); Model Bias **`+2.92%`** | [`test_forecast_evaluation.py`](file:///e:/ShelfSense/ShelfSense/backend/tests/test_forecast_evaluation.py) |
-| **Pooled Upper-Bound (P90) Coverage (Folds 5–8)** | Days 0–3: **`86.56%`** · Days 4–6: **`92.92%`** · Overall Pooled: **`89.29%`** (Target `85%–95%`) | [`test_forecast_evaluation.py`](file:///e:/ShelfSense/ShelfSense/backend/tests/test_forecast_evaluation.py) |
-| **Zero Future Leakage & Determinism** | `OMP_NUM_THREADS=1` + `threadpool_limits(1)`; retraining after perturbing future sales/deliveries matches within **`< 1e-9`** | [`test_forecast_leakage.py`](file:///e:/ShelfSense/ShelfSense/backend/tests/test_forecast_leakage.py) |
-| **Empirical Summed-Residual Buffer (`ING-PORK`)** | `Buffer(1d) = 1.32 kg`, `Buffer(5d) = 3.63 kg`, `5 × Buffer(1d) = 6.60 kg` (Ratio **`0.550`**, strictly sub-additive) | [`test_forecast_evaluation.py`](file:///e:/ShelfSense/ShelfSense/backend/tests/test_forecast_evaluation.py) |
-| **Pork Shoulder Expiry-Risk & Order Fixture** | `270 × 0.080 kg = 21.6 kg` demand + `2.16 kg` (10%) buffer - `2.0 kg` Lot B usable (`4.0 kg` Lot A excluded as at-risk) = `21.76 kg` net -> **`25.0 kg` (`5 × 5 kg` packs)** | [`test_inventory_m4.py`](file:///e:/ShelfSense/ShelfSense/backend/tests/test_inventory_m4.py) |
-| **Labor Budget & Peak Staffing Fixture** | `₩4,000,000` sales × `30%` = **`₩1,200,000`** budget; `92h × ₩12,000` = **`₩1,104,000` (`27.6%`)**; `48 covers/hr ÷ 14` = **`4 front staff`** | [`test_waste_labor_m6.py`](file:///e:/ShelfSense/ShelfSense/backend/tests/test_waste_labor_m6.py) |
+## Project Structure
 
----
+```text
+backend/
+  main.py                  # FastAPI application and static SPA server
+  models.py                # SQLModel database schema
+  seed.py                  # Deterministic synthetic data generator (seed=42)
+  services/                # Forecasting, barcode parsing, FEFO inventory, ordering, labor
+  scripts/                 # Build-time forecast cache and backtest report scripts
+  tests/                   # Pytest unit and integration suite (40 tests)
+frontend/
+  src/components/          # 8 operational views and Vitest unit tests
+  src/i18n/                # Korean and English locale dictionaries
+  src/index.css            # Design tokens and component styles
+docs/
+  BACKTEST_REPORT.md       # 20-series rolling-origin backtest metrics
+  STATUS.md                # Milestone verification log
+```
 
-## 4. Documentation Index
-- [`AGENTS.md`](file:///e:/ShelfSense/ShelfSense/AGENTS.md) — Architecture, non-negotiable domain rules, and required fixtures.
-- [`docs/STATUS.md`](file:///e:/ShelfSense/ShelfSense/docs/STATUS.md) — Milestone M1–M7 inventory and Pre-M3 Audit checklist evidence.
-- [`docs/BACKTEST_REPORT.md`](file:///e:/ShelfSense/ShelfSense/docs/BACKTEST_REPORT.md) — Full 20-series rolling-origin backtest evaluation report.
-- [`docs/forecast_chart.png`](file:///e:/ShelfSense/ShelfSense/docs/forecast_chart.png) — Screenshot of the live running application showing the non-double-counted stacked 7-day forecast chart.
+## Deployment
 
+The repository includes a multi-stage [`Dockerfile`](Dockerfile) and [`render.yaml`](render.yaml) that build the React frontend and serve it from FastAPI on a single origin. During the image build, `backend/scripts/precompute_forecast.py` precomputes the 7-day forecast cache so low-CPU instances can serve forecast requests immediately without training at runtime.
 
----
+To run the production container locally:
 
-## Deployment (Render — free Docker web service)
+```bash
+docker build -t shelfsense .
+docker run -p 7860:7860 shelfsense
+```
 
-The repo ships a single-container [`Dockerfile`](Dockerfile) and a Render Blueprint [`render.yaml`](render.yaml). The image builds the React frontend and serves it from FastAPI, so the UI and `/api/*` share one origin.
+Then open `http://localhost:7860`.
 
-1. Sign up at https://render.com with GitHub (free plan, no card required).
-2. **New → Blueprint** → select this repository → **Apply**.
-3. Render builds the image (~5–10 min first time) and serves it at `https://shelfsense-xxxx.onrender.com`. Every push to `main` auto-deploys.
+## Documentation
 
-How it fits the free plan (0.1 CPU / 512 MB):
-- The deterministic 7-day forecast (8-fold backtest, 20 series) is **pre-trained during `docker build`** by `backend/scripts/precompute_forecast.py` and saved to `backend/forecast_cache.json`; the server loads it instantly instead of training at runtime. Model, data and `seed=42` are unchanged. Without the cache file (e.g. local dev) the API trains live as before.
-- Free instances sleep after 15 min idle (first request then takes ~1 min to wake).
-- Storage is ephemeral: the SQLite DB resets to the deterministic `seed=42` demo state on every restart/redeploy.
-
-Local Docker test: `docker build -t shelfsense . && docker run -p 7860:7860 shelfsense` → http://localhost:7860
+- [`DESIGN.md`](DESIGN.md): Visual system, typography, and layout rules
+- [`AGENTS.md`](AGENTS.md): Domain constraints and test fixtures
+- [`docs/BACKTEST_REPORT.md`](docs/BACKTEST_REPORT.md): Rolling-origin backtest evaluation
+- [`docs/STATUS.md`](docs/STATUS.md): Test and audit summary
